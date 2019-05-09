@@ -1,3 +1,4 @@
+if(CONFIG_MBEDTLS)
 zephyr_interface_library_named(mbedTLS)
 
 if(CONFIG_MBEDTLS_BUILTIN)
@@ -115,3 +116,4 @@ else()
 endif()
 
 target_link_libraries(mbedTLS INTERFACE zephyr_interface)
+endif()
