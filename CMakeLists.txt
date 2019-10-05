@@ -23,6 +23,14 @@ if(CONFIG_MBEDTLS_BUILTIN)
     ${mbedtls_sources}
   )
 
+if(CONFIG_ARCH_POSIX AND CONFIG_ASAN AND NOT CONFIG_64BIT)
+  # i386 assembly code used in MBEDTLS does not compile with size optimization
+  # if address sanitizer is enabled, as such switch default optimization level
+  # to speed
+  set_property(SOURCE library/bignum.c APPEND PROPERTY COMPILE_OPTIONS
+      "${OPTIMIZE_FOR_SPEED_FLAG}")
+endif ()
+
   zephyr_library_link_libraries(mbedTLS)
 else()
   assert(CONFIG_MBEDTLS_LIBRARY "MBEDTLS was enabled, but neither BUILTIN or LIBRARY was selected.")
