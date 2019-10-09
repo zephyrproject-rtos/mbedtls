@@ -2,11 +2,11 @@ if(CONFIG_MBEDTLS)
 zephyr_interface_library_named(mbedTLS)
 
 if(CONFIG_MBEDTLS_BUILTIN)
-  target_compile_definitions(mbedTLS INTERFACE
+  target_compile_definitions(${IMAGE}mbedTLS INTERFACE
 	MBEDTLS_CONFIG_FILE="${CONFIG_MBEDTLS_CFG_FILE}"
 	)
 
-  target_include_directories(mbedTLS INTERFACE
+  target_include_directories(${IMAGE}mbedTLS INTERFACE
 	include
 	configs
 	)
@@ -94,14 +94,14 @@ if(CONFIG_MBEDTLS_BUILTIN)
   zephyr_library_sources(library/x509write_csr.c)
   zephyr_library_sources(library/xtea.c)
 
-  zephyr_library_link_libraries(mbedTLS)
+  zephyr_library_link_libraries(${IMAGE}mbedTLS)
 else()
   assert(CONFIG_MBEDTLS_LIBRARY "MBEDTLS was enabled, but neither BUILTIN or LIBRARY was selected.")
 
   # NB: CONFIG_MBEDTLS_LIBRARY is not regression tested and is
   # therefore susceptible to bit rot
 
-  target_include_directories(mbedTLS INTERFACE
+  target_include_directories(${IMAGE}mbedTLS INTERFACE
 	${CONFIG_MBEDTLS_INSTALL_PATH}
 	)
 
