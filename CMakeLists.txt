@@ -23,6 +23,7 @@ if(CONFIG_MBEDTLS_BUILTIN)
     ${mbedtls_sources}
   )
 
+  zephyr_library_app_memory(k_mbedtls_partition)
 if(CONFIG_ARCH_POSIX AND CONFIG_ASAN AND NOT CONFIG_64BIT)
   # i386 assembly code used in MBEDTLS does not compile with size optimization
   # if address sanitizer is enabled, as such switch default optimization level
