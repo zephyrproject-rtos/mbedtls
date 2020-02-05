@@ -166,6 +166,10 @@
 #define MBEDTLS_CIPHER_MODE_CBC
 #endif
 
+#if defined(CONFIG_MBEDTLS_CIPHER_MODE_CTR_ENABLED)
+#define MBEDTLS_CIPHER_MODE_CTR
+#endif
+
 /* Supported elliptic curves */
 
 #if defined(CONFIG_MBEDTLS_ECP_DP_SECP192R1_ENABLED)
