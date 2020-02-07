@@ -13,7 +13,7 @@ define guard was added, as showed bellow:
 #define _POSIX_C_SOURCE 200112L
 #endif
 
-At version 2.16.2
+At version 2.16.4
 
 The following is the license information for this code:
 
