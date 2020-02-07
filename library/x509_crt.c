@@ -2093,7 +2093,7 @@ check_signature:
         break;
     }
 
-    if (parent == NULL)
+    if( parent == NULL )
     {
         *r_parent = fallback_parent;
         *r_signature_is_good = fallback_signature_is_good;
@@ -2234,7 +2234,7 @@ static int x509_crt_check_ee_locally_trusted(
  * Tests for (aspects of) this function should include at least:
  * - trusted EE
  * - EE -> trusted root
- * - EE -> intermedate CA -> trusted root
+ * - EE -> intermediate CA -> trusted root
  * - if relevant: EE untrusted
  * - if relevant: EE -> intermediate, untrusted
  * with the aspect under test checked at each relevant level (EE, int, root).
