@@ -58,7 +58,6 @@
 #define MBEDTLS_SSL_TLS_C
 #define MBEDTLS_SSL_SRV_C
 #define MBEDTLS_SSL_CLI_C
-#define MBEDTLS_CIPHER_C
 #define MBEDTLS_SSL_MAX_FRAGMENT_LENGTH
 
 #endif
@@ -294,14 +293,15 @@
 #define MBEDTLS_SSL_EXPORT_KEYS
 #endif
 
-/* Automatic dependencies */
+#if defined(CONFIG_MBEDTLS_CIPHER)
+#define MBEDTLS_CIPHER_C
+#endif
 
-#if defined(MBEDTLS_SSL_PROTO_TLS1) || \
-    defined(MBEDTLS_SSL_PROTO_TLS1_1) || \
-    defined(MBEDTLS_SSL_PROTO_TLS1_2) || \
-    defined(MBEDTLS_HMAC_DRBG_C)
+#if defined(CONFIG_MBEDTLS_MD)
 #define MBEDTLS_MD_C
 #endif
+
+/* Automatic dependencies */
 
 #if defined(MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED) || \
     defined(MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED)
