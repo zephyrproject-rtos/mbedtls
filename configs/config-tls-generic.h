@@ -297,6 +297,10 @@
 #define MBEDTLS_CIPHER_C
 #endif
 
+#if defined(CONFIG_MBEDTLS_PKCS1_V21_ENABLED)
+#define MBEDTLS_PKCS1_V21
+#endif
+
 #if defined(CONFIG_MBEDTLS_MD)
 #define MBEDTLS_MD_C
 #endif
