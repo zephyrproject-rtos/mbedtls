@@ -40,7 +40,7 @@ static void init_heap(void)
 #define init_heap(...)
 #endif /* CONFIG_MBEDTLS_ENABLE_HEAP && MBEDTLS_MEMORY_BUFFER_ALLOC_C */
 
-static int _mbedtls_init(struct device *device)
+static int _mbedtls_init(const struct device *device)
 {
 	ARG_UNUSED(device);
 
