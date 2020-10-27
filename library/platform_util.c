@@ -88,7 +88,7 @@
 #if !defined(MBEDTLS_PLATFORM_HAS_EXPLICIT_BZERO) && !(defined(__STDC_LIB_EXT1__) && \
     !defined(__IAR_SYSTEMS_ICC__)) \
     && !defined(_WIN32)
-static void *(*const volatile memset_func)(void *, int, size_t) = memset;
+void *(*const volatile memset_func)(void *, int, size_t) = memset;
 #endif
 
 void mbedtls_platform_zeroize(void *buf, size_t len)
