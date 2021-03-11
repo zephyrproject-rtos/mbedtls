@@ -402,7 +402,11 @@
 #define MBEDTLS_PK_PARSE_C
 #endif
 
-#if defined(MBEDTLS_PK_PARSE_C)
+#if defined(CONFIG_MBEDTLS_PK_WRITE_C)
+#define MBEDTLS_PK_WRITE_C
+#endif
+
+#if defined(MBEDTLS_PK_PARSE_C) || defined(MBEDTLS_PK_WRITE_C)
 #define MBEDTLS_PK_C
 #endif
 
