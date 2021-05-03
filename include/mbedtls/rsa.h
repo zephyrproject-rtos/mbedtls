@@ -11,13 +11,7 @@
  */
 /*
  *  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
- *
- *  This file is provided under the Apache License 2.0, or the
- *  GNU General Public License v2.0 or later.
- *
- *  **********
- *  Apache License 2.0:
+ *  SPDX-License-Identifier: Apache-2.0
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may
  *  not use this file except in compliance with the License.
@@ -30,42 +24,21 @@
  *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
- *
- *  **********
- *
- *  **********
- *  GNU General Public License v2.0 or later:
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- *  **********
  */
 #ifndef MBEDTLS_RSA_H
 #define MBEDTLS_RSA_H
 
 #if !defined(MBEDTLS_CONFIG_FILE)
-#include "config.h"
+#include "mbedtls/config.h"
 #else
 #include MBEDTLS_CONFIG_FILE
 #endif
 
-#include "bignum.h"
-#include "md.h"
+#include "mbedtls/bignum.h"
+#include "mbedtls/md.h"
 
 #if defined(MBEDTLS_THREADING_C)
-#include "threading.h"
+#include "mbedtls/threading.h"
 #endif
 
 /*
@@ -124,7 +97,10 @@ extern "C" {
  */
 typedef struct mbedtls_rsa_context
 {
-    int ver;                    /*!<  Always 0.*/
+    int ver;                    /*!<  Reserved for internal purposes.
+                                 *    Do not set this field in application
+                                 *    code. Its meaning might change without
+                                 *    notice. */
     size_t len;                 /*!<  The size of \p N in Bytes. */
 
     mbedtls_mpi N;              /*!<  The public modulus. */
@@ -154,6 +130,7 @@ typedef struct mbedtls_rsa_context
                                      mask generating function used in the
                                      EME-OAEP and EMSA-PSS encodings. */
 #if defined(MBEDTLS_THREADING_C)
+    /* Invariant: the mutex is initialized iff ver != 0. */
     mbedtls_threading_mutex_t mutex;    /*!<  Thread-safety mutex. */
 #endif
 }
@@ -626,7 +603,8 @@ int mbedtls_rsa_private( mbedtls_rsa_context *ctx,
  *                 #MBEDTLS_RSA_PUBLIC or #MBEDTLS_RSA_PRIVATE (deprecated).
  * \param ilen     The length of the plaintext in Bytes.
  * \param input    The input data to encrypt. This must be a readable
- *                 buffer of size \p ilen Bytes. This must not be \c NULL.
+ *                 buffer of size \p ilen Bytes. It may be \c NULL if
+ *                 `ilen == 0`.
  * \param output   The output buffer. This must be a writable buffer
  *                 of length \c ctx->len Bytes. For example, \c 256 Bytes
  *                 for an 2048-bit RSA modulus.
@@ -666,7 +644,8 @@ int mbedtls_rsa_pkcs1_encrypt( mbedtls_rsa_context *ctx,
  *                 #MBEDTLS_RSA_PUBLIC or #MBEDTLS_RSA_PRIVATE (deprecated).
  * \param ilen     The length of the plaintext in Bytes.
  * \param input    The input data to encrypt. This must be a readable
- *                 buffer of size \p ilen Bytes. This must not be \c NULL.
+ *                 buffer of size \p ilen Bytes. It may be \c NULL if
+ *                 `ilen == 0`.
  * \param output   The output buffer. This must be a writable buffer
  *                 of length \c ctx->len Bytes. For example, \c 256 Bytes
  *                 for an 2048-bit RSA modulus.
@@ -710,7 +689,8 @@ int mbedtls_rsa_rsaes_pkcs1_v15_encrypt( mbedtls_rsa_context *ctx,
  * \param label_len  The length of the label in Bytes.
  * \param ilen       The length of the plaintext buffer \p input in Bytes.
  * \param input      The input data to encrypt. This must be a readable
- *                   buffer of size \p ilen Bytes. This must not be \c NULL.
+ *                   buffer of size \p ilen Bytes. It may be \c NULL if
+ *                   `ilen == 0`.
  * \param output     The output buffer. This must be a writable buffer
  *                   of length \c ctx->len Bytes. For example, \c 256 Bytes
  *                   for an 2048-bit RSA modulus.
