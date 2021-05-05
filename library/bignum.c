@@ -2,13 +2,7 @@
  *  Multi-precision integer library
  *
  *  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
- *
- *  This file is provided under the Apache License 2.0, or the
- *  GNU General Public License v2.0 or later.
- *
- *  **********
- *  Apache License 2.0:
+ *  SPDX-License-Identifier: Apache-2.0
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may
  *  not use this file except in compliance with the License.
@@ -21,27 +15,6 @@
  *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
- *
- *  **********
- *
- *  **********
- *  GNU General Public License v2.0 or later:
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- *  **********
  */
 
 /*
@@ -60,17 +33,14 @@
  *
  */
 
-#if !defined(MBEDTLS_CONFIG_FILE)
-#include "mbedtls/config.h"
-#else
-#include MBEDTLS_CONFIG_FILE
-#endif
+#include "common.h"
 
 #if defined(MBEDTLS_BIGNUM_C)
 
 #include "mbedtls/bignum.h"
 #include "mbedtls/bn_mul.h"
 #include "mbedtls/platform_util.h"
+#include "mbedtls/error.h"
 
 #include <string.h>
 
@@ -355,7 +325,7 @@ cleanup:
  */
 int mbedtls_mpi_lset( mbedtls_mpi *X, mbedtls_mpi_sint z )
 {
-    int ret;
+    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     MPI_VALIDATE_RET( X != NULL );
 
     MBEDTLS_MPI_CHK( mbedtls_mpi_grow( X, 1 ) );
@@ -498,7 +468,7 @@ static int mpi_get_digit( mbedtls_mpi_uint *d, int radix, char c )
  */
 int mbedtls_mpi_read_string( mbedtls_mpi *X, int radix, const char *s )
 {
-    int ret;
+    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     size_t i, j, slen, n;
     mbedtls_mpi_uint d;
     mbedtls_mpi T;
@@ -573,7 +543,7 @@ cleanup:
 static int mpi_write_hlp( mbedtls_mpi *X, int radix,
                           char **p, const size_t buflen )
 {
-    int ret;
+    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     mbedtls_mpi_uint r;
     size_t length = 0;
     char *p_end = *p + buflen;
@@ -738,7 +708,7 @@ int mbedtls_mpi_read_file( mbedtls_mpi *X, int radix, FILE *fin )
  */
 int mbedtls_mpi_write_file( const char *p, const mbedtls_mpi *X, int radix, FILE *fout )
 {
-    int ret;
+    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     size_t n, slen, plen;
     /*
      * Buffer should have space for (short) label and decimal formatted MPI,
@@ -868,11 +838,44 @@ static void mpi_bigendian_to_host( mbedtls_mpi_uint * const p, size_t limbs )
 }
 
 /*
+ * Import X from unsigned binary data, little endian
+ */
+int mbedtls_mpi_read_binary_le( mbedtls_mpi *X,
+                                const unsigned char *buf, size_t buflen )
+{
+    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
+    size_t i;
+    size_t const limbs = CHARS_TO_LIMBS( buflen );
+
+    /* Ensure that target MPI has exactly the necessary number of limbs */
+    if( X->n != limbs )
+    {
+        mbedtls_mpi_free( X );
+        mbedtls_mpi_init( X );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_grow( X, limbs ) );
+    }
+
+    MBEDTLS_MPI_CHK( mbedtls_mpi_lset( X, 0 ) );
+
+    for( i = 0; i < buflen; i++ )
+        X->p[i / ciL] |= ((mbedtls_mpi_uint) buf[i]) << ((i % ciL) << 3);
+
+cleanup:
+
+    /*
+     * This function is also used to import keys. However, wiping the buffers
+     * upon failure is not necessary because failure only can happen before any
+     * input is copied.
+     */
+    return( ret );
+}
+
+/*
  * Import X from unsigned binary data, big endian
  */
 int mbedtls_mpi_read_binary( mbedtls_mpi *X, const unsigned char *buf, size_t buflen )
 {
-    int ret;
+    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     size_t const limbs    = CHARS_TO_LIMBS( buflen );
     size_t const overhead = ( limbs * ciL ) - buflen;
     unsigned char *Xp;
@@ -901,7 +904,51 @@ int mbedtls_mpi_read_binary( mbedtls_mpi *X, const unsigned char *buf, size_t bu
 
 cleanup:
 
+    /*
+     * This function is also used to import keys. However, wiping the buffers
+     * upon failure is not necessary because failure only can happen before any
+     * input is copied.
+     */
     return( ret );
+}
+
+/*
+ * Export X into unsigned binary data, little endian
+ */
+int mbedtls_mpi_write_binary_le( const mbedtls_mpi *X,
+                                 unsigned char *buf, size_t buflen )
+{
+    size_t stored_bytes = X->n * ciL;
+    size_t bytes_to_copy;
+    size_t i;
+
+    if( stored_bytes < buflen )
+    {
+        bytes_to_copy = stored_bytes;
+    }
+    else
+    {
+        bytes_to_copy = buflen;
+
+        /* The output buffer is smaller than the allocated size of X.
+         * However X may fit if its leading bytes are zero. */
+        for( i = bytes_to_copy; i < stored_bytes; i++ )
+        {
+            if( GET_BYTE( X, i ) != 0 )
+                return( MBEDTLS_ERR_MPI_BUFFER_TOO_SMALL );
+        }
+    }
+
+    for( i = 0; i < bytes_to_copy; i++ )
+        buf[i] = GET_BYTE( X, i );
+
+    if( stored_bytes < buflen )
+    {
+        /* Write trailing 0 bytes */
+        memset( buf + stored_bytes, 0, buflen - stored_bytes );
+    }
+
+    return( 0 );
 }
 
 /*
@@ -955,7 +1002,7 @@ int mbedtls_mpi_write_binary( const mbedtls_mpi *X,
  */
 int mbedtls_mpi_shift_l( mbedtls_mpi *X, size_t count )
 {
-    int ret;
+    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     size_t i, v0, t1;
     mbedtls_mpi_uint r0 = 0, r1;
     MPI_VALIDATE_RET( X != NULL );
@@ -1235,7 +1282,7 @@ int mbedtls_mpi_cmp_int( const mbedtls_mpi *X, mbedtls_mpi_sint z )
  */
 int mbedtls_mpi_add_abs( mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi *B )
 {
-    int ret;
+    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     size_t i, j;
     mbedtls_mpi_uint *o, *p, c, tmp;
     MPI_VALIDATE_RET( X != NULL );
@@ -1326,7 +1373,7 @@ static mbedtls_mpi_uint mpi_sub_hlp( size_t n,
 int mbedtls_mpi_sub_abs( mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi *B )
 {
     mbedtls_mpi TB;
-    int ret;
+    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     size_t n;
     mbedtls_mpi_uint carry;
     MPI_VALIDATE_RET( X != NULL );
@@ -1354,6 +1401,12 @@ int mbedtls_mpi_sub_abs( mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi
     for( n = B->n; n > 0; n-- )
         if( B->p[n - 1] != 0 )
             break;
+    if( n > A->n )
+    {
+        /* B >= (2^ciL)^n > A */
+        ret = MBEDTLS_ERR_MPI_NEGATIVE_VALUE;
+        goto cleanup;
+    }
 
     carry = mpi_sub_hlp( n, X->p, B->p );
     if( carry != 0 )
@@ -1561,7 +1614,7 @@ void mpi_mul_hlp( size_t i, mbedtls_mpi_uint *s, mbedtls_mpi_uint *d, mbedtls_mp
  */
 int mbedtls_mpi_mul_mpi( mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi *B )
 {
-    int ret;
+    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     size_t i, j;
     mbedtls_mpi TA, TB;
     MPI_VALIDATE_RET( X != NULL );
@@ -1716,9 +1769,10 @@ static mbedtls_mpi_uint mbedtls_int_div_int( mbedtls_mpi_uint u1,
 int mbedtls_mpi_div_mpi( mbedtls_mpi *Q, mbedtls_mpi *R, const mbedtls_mpi *A,
                          const mbedtls_mpi *B )
 {
-    int ret;
+    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     size_t i, n, t, k;
     mbedtls_mpi X, Y, Z, T1, T2;
+    mbedtls_mpi_uint TP2[3];
     MPI_VALIDATE_RET( A != NULL );
     MPI_VALIDATE_RET( B != NULL );
 
@@ -1726,7 +1780,17 @@ int mbedtls_mpi_div_mpi( mbedtls_mpi *Q, mbedtls_mpi *R, const mbedtls_mpi *A,
         return( MBEDTLS_ERR_MPI_DIVISION_BY_ZERO );
 
     mbedtls_mpi_init( &X ); mbedtls_mpi_init( &Y ); mbedtls_mpi_init( &Z );
-    mbedtls_mpi_init( &T1 ); mbedtls_mpi_init( &T2 );
+    mbedtls_mpi_init( &T1 );
+    /*
+     * Avoid dynamic memory allocations for constant-size T2.
+     *
+     * T2 is used for comparison only and the 3 limbs are assigned explicitly,
+     * so nobody increase the size of the MPI and we're safe to use an on-stack
+     * buffer.
+     */
+    T2.s = 1;
+    T2.n = sizeof( TP2 ) / sizeof( *TP2 );
+    T2.p = TP2;
 
     if( mbedtls_mpi_cmp_abs( A, B ) < 0 )
     {
@@ -1742,7 +1806,6 @@ int mbedtls_mpi_div_mpi( mbedtls_mpi *Q, mbedtls_mpi *R, const mbedtls_mpi *A,
     MBEDTLS_MPI_CHK( mbedtls_mpi_grow( &Z, A->n + 2 ) );
     MBEDTLS_MPI_CHK( mbedtls_mpi_lset( &Z,  0 ) );
     MBEDTLS_MPI_CHK( mbedtls_mpi_grow( &T1, 2 ) );
-    MBEDTLS_MPI_CHK( mbedtls_mpi_grow( &T2, 3 ) );
 
     k = mbedtls_mpi_bitlen( &Y ) % biL;
     if( k < biL - 1 )
@@ -1774,6 +1837,10 @@ int mbedtls_mpi_div_mpi( mbedtls_mpi *Q, mbedtls_mpi *R, const mbedtls_mpi *A,
                                                             Y.p[t], NULL);
         }
 
+        T2.p[0] = ( i < 2 ) ? 0 : X.p[i - 2];
+        T2.p[1] = ( i < 1 ) ? 0 : X.p[i - 1];
+        T2.p[2] = X.p[i];
+
         Z.p[i - t - 1]++;
         do
         {
@@ -1783,11 +1850,6 @@ int mbedtls_mpi_div_mpi( mbedtls_mpi *Q, mbedtls_mpi *R, const mbedtls_mpi *A,
             T1.p[0] = ( t < 1 ) ? 0 : Y.p[t - 1];
             T1.p[1] = Y.p[t];
             MBEDTLS_MPI_CHK( mbedtls_mpi_mul_int( &T1, &T1, Z.p[i - t - 1] ) );
-
-            MBEDTLS_MPI_CHK( mbedtls_mpi_lset( &T2, 0 ) );
-            T2.p[0] = ( i < 2 ) ? 0 : X.p[i - 2];
-            T2.p[1] = ( i < 1 ) ? 0 : X.p[i - 1];
-            T2.p[2] = X.p[i];
         }
         while( mbedtls_mpi_cmp_mpi( &T1, &T2 ) > 0 );
 
@@ -1823,7 +1885,8 @@ int mbedtls_mpi_div_mpi( mbedtls_mpi *Q, mbedtls_mpi *R, const mbedtls_mpi *A,
 cleanup:
 
     mbedtls_mpi_free( &X ); mbedtls_mpi_free( &Y ); mbedtls_mpi_free( &Z );
-    mbedtls_mpi_free( &T1 ); mbedtls_mpi_free( &T2 );
+    mbedtls_mpi_free( &T1 );
+    mbedtls_platform_zeroize( TP2, sizeof( TP2 ) );
 
     return( ret );
 }
@@ -1852,7 +1915,7 @@ int mbedtls_mpi_div_int( mbedtls_mpi *Q, mbedtls_mpi *R,
  */
 int mbedtls_mpi_mod_mpi( mbedtls_mpi *R, const mbedtls_mpi *A, const mbedtls_mpi *B )
 {
-    int ret;
+    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     MPI_VALIDATE_RET( R != NULL );
     MPI_VALIDATE_RET( A != NULL );
     MPI_VALIDATE_RET( B != NULL );
@@ -2042,7 +2105,7 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi *X, const mbedtls_mpi *A,
                          const mbedtls_mpi *E, const mbedtls_mpi *N,
                          mbedtls_mpi *_RR )
 {
-    int ret;
+    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     size_t wbits, wsize, one = 1;
     size_t i, j, nblimbs;
     size_t bufsize, nbits;
@@ -2261,15 +2324,15 @@ cleanup:
  */
 int mbedtls_mpi_gcd( mbedtls_mpi *G, const mbedtls_mpi *A, const mbedtls_mpi *B )
 {
-    int ret;
+    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     size_t lz, lzt;
-    mbedtls_mpi TG, TA, TB;
+    mbedtls_mpi TA, TB;
 
     MPI_VALIDATE_RET( G != NULL );
     MPI_VALIDATE_RET( A != NULL );
     MPI_VALIDATE_RET( B != NULL );
 
-    mbedtls_mpi_init( &TG ); mbedtls_mpi_init( &TA ); mbedtls_mpi_init( &TB );
+    mbedtls_mpi_init( &TA ); mbedtls_mpi_init( &TB );
 
     MBEDTLS_MPI_CHK( mbedtls_mpi_copy( &TA, A ) );
     MBEDTLS_MPI_CHK( mbedtls_mpi_copy( &TB, B ) );
@@ -2307,7 +2370,7 @@ int mbedtls_mpi_gcd( mbedtls_mpi *G, const mbedtls_mpi *A, const mbedtls_mpi *B 
 
 cleanup:
 
-    mbedtls_mpi_free( &TG ); mbedtls_mpi_free( &TA ); mbedtls_mpi_free( &TB );
+    mbedtls_mpi_free( &TA ); mbedtls_mpi_free( &TB );
 
     return( ret );
 }
@@ -2323,7 +2386,7 @@ int mbedtls_mpi_fill_random( mbedtls_mpi *X, size_t size,
                      int (*f_rng)(void *, unsigned char *, size_t),
                      void *p_rng )
 {
-    int ret;
+    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     size_t const limbs = CHARS_TO_LIMBS( size );
     size_t const overhead = ( limbs * ciL ) - size;
     unsigned char *Xp;
@@ -2354,7 +2417,7 @@ cleanup:
  */
 int mbedtls_mpi_inv_mod( mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi *N )
 {
-    int ret;
+    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     mbedtls_mpi G, TA, TU, U1, U2, TB, TV, V1, V2;
     MPI_VALIDATE_RET( X != NULL );
     MPI_VALIDATE_RET( A != NULL );
@@ -2607,7 +2670,7 @@ int mbedtls_mpi_is_prime_ext( const mbedtls_mpi *X, int rounds,
                               int (*f_rng)(void *, unsigned char *, size_t),
                               void *p_rng )
 {
-    int ret;
+    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     mbedtls_mpi XX;
     MPI_VALIDATE_RET( X     != NULL );
     MPI_VALIDATE_RET( f_rng != NULL );
@@ -2944,7 +3007,7 @@ int mbedtls_mpi_self_test( int verbose )
 cleanup:
 
     if( ret != 0 && verbose != 0 )
-        mbedtls_printf( "Unexpected error, return code = %08X\n", ret );
+        mbedtls_printf( "Unexpected error, return code = %08X\n", (unsigned int) ret );
 
     mbedtls_mpi_free( &A ); mbedtls_mpi_free( &E ); mbedtls_mpi_free( &N ); mbedtls_mpi_free( &X );
     mbedtls_mpi_free( &Y ); mbedtls_mpi_free( &U ); mbedtls_mpi_free( &V );
