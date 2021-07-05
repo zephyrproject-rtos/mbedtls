@@ -3882,9 +3882,11 @@ psa_status_t psa_cipher_generate_iv( psa_cipher_operation_t *operation,
                                      size_t iv_size,
                                      size_t *iv_length )
 {
-    psa_status_t status;
-    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
-    if( operation->iv_set || ! operation->iv_required )
+    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
+    uint8_t local_iv[PSA_CIPHER_IV_MAX_SIZE];
+    size_t default_iv_length;
+
+    if( operation->id == 0 )
     {
         return( PSA_ERROR_BAD_STATE );
     }
@@ -3898,27 +3900,39 @@ psa_status_t psa_cipher_generate_iv( psa_cipher_operation_t *operation,
         goto exit;
     }
 
-    if( iv_size < operation->iv_size )
+    default_iv_length = operation->default_iv_length;
+    if( iv_size < default_iv_length )
     {
         status = PSA_ERROR_BUFFER_TOO_SMALL;
         goto exit;
     }
-    ret = mbedtls_psa_get_random( MBEDTLS_PSA_RANDOM_STATE,
-                                  iv, operation->iv_size );
-    if( ret != 0 )
+
+    if( default_iv_length > PSA_CIPHER_IV_MAX_SIZE )
     {
-        status = mbedtls_to_psa_error( ret );
+        status = PSA_ERROR_GENERIC_ERROR;
         goto exit;
     }
 
-    *iv_length = operation->iv_size;
-    status = psa_cipher_set_iv( operation, iv, *iv_length );
+    status = mbedtls_psa_get_random( MBEDTLS_PSA_RANDOM_STATE,
+		    local_iv, default_iv_length );
+    if( status != PSA_SUCCESS )
+        goto exit;
+
+    status = psa_cipher_set_iv( operation, local_iv, default_iv_length );
 
 exit:
     if( status == PSA_SUCCESS )
+    {
+        memcpy( iv, local_iv, default_iv_length );
+        *iv_length = default_iv_length;
         operation->iv_set = 1;
+    }
     else
+    {
+        *iv_length = 0;
         psa_cipher_abort( operation );
+    }
+
     return( status );
 }
 
