@@ -333,6 +333,16 @@
 #error "!MBEDTLS_SSL_KEEP_PEER_CERTIFICATE requires MBEDTLS_SHA512_C, MBEDTLS_SHA256_C or MBEDTLS_SHA1_C"
 #endif
 
+#if defined(MBEDTLS_LMOTS_C) &&                                       \
+    ( !defined(MBEDTLS_MD_C) )
+#error "MBEDTLS_LMOTS_C requires MBEDTLS_MD_C"
+#endif
+
+#if defined(MBEDTLS_LMS_C) &&                                          \
+    ( !defined(MBEDTLS_LMOTS_C) || !defined(MBEDTLS_MD_C) )
+#error "MBEDTLS_LMS_C requires MBEDTLS_LMOTS_C and MBEDTLS_MD_C"
+#endif
+
 #if defined(MBEDTLS_MEMORY_BUFFER_ALLOC_C) &&                          \
     ( !defined(MBEDTLS_PLATFORM_C) || !defined(MBEDTLS_PLATFORM_MEMORY) )
 #error "MBEDTLS_MEMORY_BUFFER_ALLOC_C defined, but not all prerequisites"
