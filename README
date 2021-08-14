@@ -15,8 +15,8 @@ define guard was added, as showed bellow:
 
 Details of the current version:
    repo: https://github.com/ARMmbed/mbedtls.git
-   tag: v2.26.0
-   commit: e483a77c85e1f9c1dd2eb1c5a8f552d2617fe400
+   tag: v3.0.0
+   commit: 8df2f8e7b9c7bb9390ac74bb7bace27edca81a2b
    license: Apache 2.0 (see details below)
 
 
