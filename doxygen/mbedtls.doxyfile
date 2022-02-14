@@ -1622,7 +1622,20 @@ PREDEFINED             = WIN32 \
                          ENABLE_PLUGIN \
                          ENABLE_MANAGEMENT \
                          ENABLE_OCC \
-                         HAVE_GETTIMEOFDAY
+                         HAVE_GETTIMEOFDAY \
+                         MBEDTLS_SSL_DTLS_CONNECTION_ID \
+                         MBEDTLS_SSL_PROTO_DTLS \
+                         MBEDTLS_SSL_SESSION_TICKETS \
+                         MBEDTLS_SSL_CLI_C \
+                         MBEDTLS_SSL_MAX_FRAGMENT_LENGTH \
+                         MBEDTLS_SSL_ENCRYPT_THEN_MAC \
+                         MBEDTLS_SSL_EXPORT_KEYS \
+                         MBEDTLS_SSL_SERVER_NAME_INDICATION \
+                         MBEDTLS_KEY_EXCHANGE_SOME_PSK_ENABLED \
+                         MBEDTLS_SSL_DTLS_HELLO_VERIFY \
+                         MBEDTLS_SSL_EXTENDED_MASTER_SECRET \
+                         MBEDTLS_DEBUG_C
+
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then
 # this tag can be used to specify a list of macro names that should be expanded.
