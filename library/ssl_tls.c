@@ -3004,7 +3004,7 @@ static void ssl_handshake_params_init( mbedtls_ssl_handshake_params *handshake )
     mbedtls_x509_crt_restart_init( &handshake->ecrs_ctx );
 #endif
 
-#if defined(MBEDTLS_SSL_SERVER_NAME_INDICATION)
+#if defined(MBEDTLS_SSL_SERVER_NAME_INDICATION) && defined(MBEDTLS_X509_CRT_PARSE_C)
     handshake->sni_authmode = MBEDTLS_SSL_VERIFY_UNSET;
 #endif
 
@@ -3684,7 +3684,7 @@ void mbedtls_ssl_conf_ca_cb( mbedtls_ssl_config *conf,
 #endif /* MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK */
 #endif /* MBEDTLS_X509_CRT_PARSE_C */
 
-#if defined(MBEDTLS_SSL_SERVER_NAME_INDICATION)
+#if defined(MBEDTLS_SSL_SERVER_NAME_INDICATION) && defined(MBEDTLS_X509_CRT_PARSE_C)
 int mbedtls_ssl_set_hs_own_cert( mbedtls_ssl_context *ssl,
                                  mbedtls_x509_crt *own_cert,
                                  mbedtls_pk_context *pk_key )
@@ -3706,7 +3706,7 @@ void mbedtls_ssl_set_hs_authmode( mbedtls_ssl_context *ssl,
 {
     ssl->handshake->sni_authmode = authmode;
 }
-#endif /* MBEDTLS_SSL_SERVER_NAME_INDICATION */
+#endif /* MBEDTLS_SSL_SERVER_NAME_INDICATION && MBEDTLS_X509_CRT_PARSE_C */
 
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 void mbedtls_ssl_set_verify( mbedtls_ssl_context *ssl,
@@ -4035,7 +4035,7 @@ void mbedtls_ssl_conf_groups( mbedtls_ssl_config *conf,
     conf->group_list = group_list;
 }
 
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
+#if defined(MBEDTLS_X509_CRT_PARSE_C) || defined(MBEDTLS_SSL_SERVER_NAME_INDICATION)
 int mbedtls_ssl_set_hostname( mbedtls_ssl_context *ssl, const char *hostname )
 {
     /* Initialize to suppress unnecessary compiler warning */
@@ -4079,7 +4079,7 @@ int mbedtls_ssl_set_hostname( mbedtls_ssl_context *ssl, const char *hostname )
 
     return( 0 );
 }
-#endif /* MBEDTLS_X509_CRT_PARSE_C */
+#endif /* MBEDTLS_X509_CRT_PARSE_C || MBEDTLS_SSL_SERVER_NAME_INDICATION */
 
 #if defined(MBEDTLS_SSL_SERVER_NAME_INDICATION)
 void mbedtls_ssl_conf_sni( mbedtls_ssl_config *conf,
@@ -6294,7 +6294,7 @@ void mbedtls_ssl_free( mbedtls_ssl_context *ssl )
         mbedtls_free( ssl->session );
     }
 
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
+#if defined(MBEDTLS_X509_CRT_PARSE_C) || defined(MBEDTLS_SSL_SERVER_NAME_INDICATION)
     if( ssl->hostname != NULL )
     {
         mbedtls_platform_zeroize( ssl->hostname, strlen( ssl->hostname ) );

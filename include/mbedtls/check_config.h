@@ -694,7 +694,8 @@
 #endif
 
 #if defined(MBEDTLS_SSL_SERVER_NAME_INDICATION) && \
-        !defined(MBEDTLS_X509_CRT_PARSE_C)
+    !(defined(MBEDTLS_X509_CRT_PARSE_C) || \
+      defined(MBEDTLS_SSL_PROTO_DTLS))
 #error "MBEDTLS_SSL_SERVER_NAME_INDICATION defined, but not all prerequisites"
 #endif
 
