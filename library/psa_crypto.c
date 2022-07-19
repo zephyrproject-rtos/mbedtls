@@ -86,6 +86,11 @@
 #include "mbedtls/sha256.h"
 #include "mbedtls/sha512.h"
 
+#if defined(PSA_CRYPTO_DRIVER_TFM_BUILTIN_KEY_LOADER)
+#include "tfm_crypto_defs.h"
+#include "tfm_builtin_key_loader.h"
+#endif /* PSA_CRYPTO_DRIVER_TFM_BUILTIN_KEY_LOADER */
+
 #define ARRAY_LENGTH( array ) ( sizeof( array ) / sizeof( *( array ) ) )
 
 #if defined(MBEDTLS_PSA_BUILTIN_ALG_HKDF) ||          \
@@ -962,7 +967,11 @@ static psa_status_t psa_get_and_lock_transparent_key_slot_with_policy(
     if( status != PSA_SUCCESS )
         return( status );
 
-    if( psa_key_lifetime_is_external( (*p_slot)->attr.lifetime ) )
+    if( psa_key_lifetime_is_external( (*p_slot)->attr.lifetime )
+#if defined(PSA_CRYPTO_DRIVER_TFM_BUILTIN_KEY_LOADER)
+        && PSA_KEY_LIFETIME_GET_LOCATION((*p_slot)->attr.lifetime) != TFM_BUILTIN_KEY_LOADER_KEY_LOCATION
+#endif /* defined(PSA_CRYPTO_DRIVER_TFM_BUILTIN_KEY_LOADER) */
+        )
     {
         psa_unlock_key_slot( *p_slot );
         *p_slot = NULL;
