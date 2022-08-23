@@ -7730,6 +7730,11 @@ psa_status_t psa_crypto_init(void)
         return PSA_SUCCESS;
     }
 
+    status = psa_initialize_key_slots();
+    if (status != PSA_SUCCESS) {
+        goto exit;
+    }
+
     /* Init drivers */
     status = psa_driver_wrapper_init();
     if (status != PSA_SUCCESS) {
@@ -7745,11 +7750,6 @@ psa_status_t psa_crypto_init(void)
         goto exit;
     }
     global_data.rng_state = RNG_SEEDED;
-
-    status = psa_initialize_key_slots();
-    if (status != PSA_SUCCESS) {
-        goto exit;
-    }
 
 #if defined(PSA_CRYPTO_STORAGE_HAS_TRANSACTIONS)
     status = psa_crypto_load_transaction();
