@@ -6327,6 +6327,11 @@ psa_status_t psa_crypto_init( void )
     if( global_data.initialized != 0 )
         return( PSA_SUCCESS );
 
+    /* Init drivers */
+    status = psa_driver_wrapper_init( );
+    if( status != PSA_SUCCESS )
+        goto exit;
+
     /* Initialize and seed the random generator. */
     mbedtls_psa_random_init( &global_data.rng );
     global_data.rng_state = RNG_INITIALIZED;
@@ -6336,11 +6341,6 @@ psa_status_t psa_crypto_init( void )
     global_data.rng_state = RNG_SEEDED;
 
     status = psa_initialize_key_slots( );
-    if( status != PSA_SUCCESS )
-        goto exit;
-
-    /* Init drivers */
-    status = psa_driver_wrapper_init( );
     if( status != PSA_SUCCESS )
         goto exit;
 
