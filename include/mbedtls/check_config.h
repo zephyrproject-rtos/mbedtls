@@ -679,6 +679,12 @@
 #error "MBEDTLS_SSL_CID_OUT_LEN_MAX too large (max 255)"
 #endif
 
+#if !defined(MBEDTLS_SSL_DTLS_CONNECTION_ID)            &&                 \
+    defined(MBEDTLS_SSL_DTLS_CONNECTION_ID_COMPAT)
+#error "MBEDTLS_SSL_DTLS_CONNECTION_ID_COMPAT defined, but not all prerequsites"
+#endif
+
+
 #if defined(MBEDTLS_SSL_ENCRYPT_THEN_MAC) &&   \
     !defined(MBEDTLS_SSL_PROTO_TLS1_2)
 #error "MBEDTLS_SSL_ENCRYPT_THEN_MAC defined, but not all prerequsites"
@@ -694,7 +700,8 @@
 #endif
 
 #if defined(MBEDTLS_SSL_SERVER_NAME_INDICATION) && \
-        !defined(MBEDTLS_X509_CRT_PARSE_C)
+    !(defined(MBEDTLS_X509_CRT_PARSE_C) || \
+      defined(MBEDTLS_SSL_PROTO_DTLS))
 #error "MBEDTLS_SSL_SERVER_NAME_INDICATION defined, but not all prerequisites"
 #endif
 

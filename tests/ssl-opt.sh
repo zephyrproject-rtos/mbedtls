@@ -314,6 +314,14 @@ requires_max_content_len() {
     requires_config_value_at_least "MBEDTLS_SSL_OUT_CONTENT_LEN" $1
 }
 
+CID_MODE=$( get_config_value_or_default "MBEDTLS_SSL_DTLS_CONNECTION_ID_COMPAT" )
+
+requires_cid_compat() {
+    if [ "$CID_MODE" = "0" ]; then
+        SKIP_NEXT="YES"
+    fi
+}
+
 # skip next test if GnuTLS isn't available
 requires_gnutls() {
     if [ -z "${GNUTLS_AVAILABLE:-}" ]; then
@@ -1791,6 +1799,17 @@ run_test    "Context serialization, client serializes, with CID" \
             -S "Deserializing connection..."
 
 requires_config_enabled MBEDTLS_SSL_CONTEXT_SERIALIZATION
+requires_config_enabled MBEDTLS_SSL_DTLS_CONNECTION_ID
+requires_cid_compat
+run_test    "Context serialization, client serializes, with CID (legacy)" \
+            "$P_SRV dtls=1 serialize=0 exchanges=2 cid=1 cid_val=dead" \
+            "$P_CLI dtls=1 serialize=1 exchanges=2 cid=1 cid_val=beef" \
+            0 \
+            -c "Deserializing connection..." \
+            -S "Deserializing connection..."
+
+
+requires_config_enabled MBEDTLS_SSL_CONTEXT_SERIALIZATION
 run_test    "Context serialization, server serializes, CCM" \
             "$P_SRV dtls=1 serialize=1 exchanges=2" \
             "$P_CLI dtls=1 serialize=0 exchanges=2 force_ciphersuite=TLS-ECDHE-ECDSA-WITH-AES-128-CCM-8" \
@@ -1823,6 +1842,17 @@ run_test    "Context serialization, server serializes, with CID" \
             -C "Deserializing connection..." \
             -s "Deserializing connection..."
 
+requires_config_enabled MBEDTLS_SSL_CONTEXT_SERIALIZATION
+requires_config_enabled MBEDTLS_SSL_DTLS_CONNECTION_ID
+requires_cid_compat
+run_test    "Context serialization, server serializes, with CID (legacy)" \
+            "$P_SRV dtls=1 serialize=1 exchanges=2 cid=1 cid_val=dead" \
+            "$P_CLI dtls=1 serialize=0 exchanges=2 cid=1 cid_val=beef" \
+            0 \
+            -C "Deserializing connection..." \
+            -s "Deserializing connection..."
+
+requires_config_enabled MBEDTLS_SSL_PROTO_TLS1_2
 requires_config_enabled MBEDTLS_SSL_CONTEXT_SERIALIZATION
 run_test    "Context serialization, both serialize, CCM" \
             "$P_SRV dtls=1 serialize=1 exchanges=2" \
@@ -1857,6 +1887,17 @@ run_test    "Context serialization, both serialize, with CID" \
             -s "Deserializing connection..."
 
 requires_config_enabled MBEDTLS_SSL_CONTEXT_SERIALIZATION
+requires_config_enabled MBEDTLS_SSL_DTLS_CONNECTION_ID
+requires_cid_compat
+run_test    "Context serialization, both serialize, with CID (legacy)" \
+            "$P_SRV dtls=1 serialize=1 exchanges=2 cid=1 cid_val=dead" \
+            "$P_CLI dtls=1 serialize=1 exchanges=2 cid=1 cid_val=beef" \
+            0 \
+            -c "Deserializing connection..." \
+            -s "Deserializing connection..."
+
+
+requires_config_enabled MBEDTLS_SSL_CONTEXT_SERIALIZATION
 run_test    "Context serialization, re-init, client serializes, CCM" \
             "$P_SRV dtls=1 serialize=0 exchanges=2" \
             "$P_CLI dtls=1 serialize=2 exchanges=2 force_ciphersuite=TLS-ECDHE-ECDSA-WITH-AES-128-CCM-8" \
@@ -1883,6 +1924,16 @@ run_test    "Context serialization, re-init, client serializes, GCM" \
 requires_config_enabled MBEDTLS_SSL_CONTEXT_SERIALIZATION
 requires_config_enabled MBEDTLS_SSL_DTLS_CONNECTION_ID
 run_test    "Context serialization, re-init, client serializes, with CID" \
+            "$P_SRV dtls=1 serialize=0 exchanges=2 cid=1 cid_val=dead" \
+            "$P_CLI dtls=1 serialize=2 exchanges=2 cid=1 cid_val=beef" \
+            0 \
+            -c "Deserializing connection..." \
+            -S "Deserializing connection..."
+
+requires_config_enabled MBEDTLS_SSL_CONTEXT_SERIALIZATION
+requires_config_enabled MBEDTLS_SSL_DTLS_CONNECTION_ID
+requires_cid_compat
+run_test    "Context serialization, re-init, client serializes, with CID (legacy)" \
             "$P_SRV dtls=1 serialize=0 exchanges=2 cid=1 cid_val=dead" \
             "$P_CLI dtls=1 serialize=2 exchanges=2 cid=1 cid_val=beef" \
             0 \
@@ -4798,6 +4849,62 @@ run_test    "SNI: DTLS, CA override with CRL" \
             -s "x509_verify_cert() returned" \
             -S "! The certificate is not correctly signed by the trusted CA" \
             -s "The certificate has been revoked (is on a CRL)"
+
+requires_config_enabled MBEDTLS_SSL_PROTO_DTLS
+run_test    "SNI: DTLS with PSK " \
+            "$P_SRV debug_level=3 dtls=1 \
+             psk=abc123 psk_identity=foo sni=localhost,-,-,-,-,-" \
+            "$P_CLI debug_level=3 server_name=localhost dtls=1  \
+             force_ciphersuite=TLS-PSK-WITH-AES-128-CBC-SHA  \
+             psk_identity=foo psk=abc123" \
+            0 \
+            -s "parse ServerName extension" \
+            -s "Ciphersuite is TLS-PSK-WITH-AES-128-CBC-SHA" \
+            -c "HTTP/1.0 200 OK"
+
+requires_config_enabled MBEDTLS_SSL_PROTO_DTLS
+run_test    "SNI: DTLS with PSK, SN not matching " \
+            "$P_SRV debug_level=3 dtls=1 \
+             psk=abc123 psk_identity=foo sni=localhost,-,-,-,-,-" \
+            "$P_CLI debug_level=3 server_name=nonesuch.example dtls=1  \
+             force_ciphersuite=TLS-PSK-WITH-AES-128-CBC-SHA  \
+             psk_identity=foo psk=abc123" \
+            1 \
+            -s "parse ServerName extension" \
+            -s "ssl_sni_wrapper() returned" \
+            -s "mbedtls_ssl_handshake returned" \
+            -c "mbedtls_ssl_handshake returned" \
+            -c "SSL - A fatal alert message was received from our peer"
+
+# Test for case where Mbed-TLS is built without X509 support
+
+requires_config_enabled MBEDTLS_SSL_PROTO_DTLS
+requires_config_disabled MBEDTLS_X509_CRT_PARSE_C
+run_test    "SNI: DTLS with PSK, no X509 " \
+            "$P_SRV debug_level=3 dtls=1 \
+             psk=abc123 psk_identity=foo sni=localhost,-,-,-,-,-" \
+            "$P_CLI debug_level=3 server_name=localhost dtls=1  \
+             force_ciphersuite=TLS-PSK-WITH-AES-128-CCM-8  \
+             psk_identity=foo psk=abc123" \
+            0 \
+            -s "parse ServerName extension" \
+            -s "Ciphersuite is TLS-PSK-WITH-AES-128-CCM-8" \
+            -c "HTTP/1.0 200 OK"
+
+requires_config_enabled MBEDTLS_SSL_PROTO_DTLS
+requires_config_disabled MBEDTLS_X509_CRT_PARSE_C
+run_test    "SNI: DTLS with PSK, SN not matching, no X509 " \
+            "$P_SRV debug_level=3 dtls=1 \
+             psk=abc123 psk_identity=foo sni=localhost,-,-,-,-,-" \
+            "$P_CLI debug_level=3 server_name=nonesuch.example dtls=1  \
+             force_ciphersuite=TLS-PSK-WITH-AES-128-CCM-8  \
+             psk_identity=foo psk=abc123" \
+            1 \
+            -s "parse ServerName extension" \
+            -s "ssl_sni_wrapper() returned" \
+            -s "mbedtls_ssl_handshake returned" \
+            -c "mbedtls_ssl_handshake returned" \
+            -c "SSL - A fatal alert message was received from our peer"
 
 # Tests for non-blocking I/O: exercise a variety of handshake flows
 
