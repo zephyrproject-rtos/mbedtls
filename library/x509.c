@@ -43,16 +43,7 @@
 #include "mbedtls/pem.h"
 #endif
 
-#if defined(MBEDTLS_PLATFORM_C)
 #include "mbedtls/platform.h"
-#else
-#include <stdio.h>
-#include <stdlib.h>
-#define mbedtls_free      free
-#define mbedtls_calloc    calloc
-#define mbedtls_printf    printf
-#define mbedtls_snprintf  snprintf
-#endif
 
 #if defined(MBEDTLS_HAVE_TIME)
 #include "mbedtls/platform_time.h"
@@ -61,6 +52,8 @@
 #include "mbedtls/platform_util.h"
 #include <time.h>
 #endif
+
+#include "mbedtls/legacy_or_psa.h"
 
 #define CHECK(code) if( ( ret = ( code ) ) != 0 ){ return( ret ); }
 #define CHECK_RANGE(min, max, val)                      \
@@ -131,6 +124,48 @@ int mbedtls_x509_get_alg( unsigned char **p, const unsigned char *end,
     return( 0 );
 }
 
+/*
+ * Convert md type to string
+ */
+static inline const char* md_type_to_string( mbedtls_md_type_t md_alg )
+{
+    switch( md_alg )
+    {
+#if defined(MBEDTLS_HAS_ALG_MD5_VIA_MD_OR_PSA)
+    case MBEDTLS_MD_MD5:
+        return( "MD5" );
+#endif
+#if defined(MBEDTLS_HAS_ALG_SHA_1_VIA_MD_OR_PSA)
+    case MBEDTLS_MD_SHA1:
+        return( "SHA1" );
+#endif
+#if defined(MBEDTLS_HAS_ALG_SHA_224_VIA_MD_OR_PSA)
+    case MBEDTLS_MD_SHA224:
+        return( "SHA224" );
+#endif
+#if defined(MBEDTLS_HAS_ALG_SHA_256_VIA_MD_OR_PSA)
+    case MBEDTLS_MD_SHA256:
+        return( "SHA256" );
+#endif
+#if defined(MBEDTLS_HAS_ALG_SHA_384_VIA_MD_OR_PSA)
+    case MBEDTLS_MD_SHA384:
+        return( "SHA384" );
+#endif
+#if defined(MBEDTLS_HAS_ALG_SHA_512_VIA_MD_OR_PSA)
+    case MBEDTLS_MD_SHA512:
+        return( "SHA512" );
+#endif
+#if defined(MBEDTLS_HAS_ALG_RIPEMD160_VIA_MD_OR_PSA)
+    case MBEDTLS_MD_RIPEMD160:
+        return( "RIPEMD160" );
+#endif
+    case MBEDTLS_MD_NONE:
+        return( NULL );
+    default:
+        return( NULL );
+    }
+}
+
 #if defined(MBEDTLS_X509_RSASSA_PSS_SUPPORT)
 /*
  * HashAlgorithm ::= AlgorithmIdentifier
@@ -198,7 +233,7 @@ static int x509_get_hash_alg( const mbedtls_x509_buf *alg, mbedtls_md_type_t *md
  *
  * RFC 4055 (which defines use of RSASSA-PSS in PKIX) states that the value
  * of trailerField MUST be 1, and PKCS#1 v2.2 doesn't even define any other
- * option. Enfore this at parsing time.
+ * option. Enforce this at parsing time.
  */
 int mbedtls_x509_get_rsassa_pss_params( const mbedtls_x509_buf *params,
                                 mbedtls_md_type_t *md_alg, mbedtls_md_type_t *mgf_md,
@@ -424,6 +459,11 @@ static int x509_get_attr_type_value( unsigned char **p,
  * For the general case we still use a flat list, but we mark elements of the
  * same set so that they are "merged" together in the functions that consume
  * this list, eg mbedtls_x509_dn_gets().
+ *
+ * On success, this function may allocate a linked list starting at cur->next
+ * that must later be free'd by the caller using mbedtls_free(). In error
+ * cases, this function frees all allocated memory internally and the caller
+ * has no freeing responsibilities.
  */
 int mbedtls_x509_get_name( unsigned char **p, const unsigned char *end,
                    mbedtls_x509_name *cur )
@@ -431,6 +471,7 @@ int mbedtls_x509_get_name( unsigned char **p, const unsigned char *end,
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     size_t set_len;
     const unsigned char *end_set;
+    mbedtls_x509_name *head = cur;
 
     /* don't use recursion, we'd risk stack overflow if not optimized */
     while( 1 )
@@ -440,14 +481,17 @@ int mbedtls_x509_get_name( unsigned char **p, const unsigned char *end,
          */
         if( ( ret = mbedtls_asn1_get_tag( p, end, &set_len,
                 MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_SET ) ) != 0 )
-            return( MBEDTLS_ERROR_ADD( MBEDTLS_ERR_X509_INVALID_NAME, ret ) );
+        {
+            ret = MBEDTLS_ERROR_ADD( MBEDTLS_ERR_X509_INVALID_NAME, ret );
+            goto error;
+        }
 
         end_set  = *p + set_len;
 
         while( 1 )
         {
             if( ( ret = x509_get_attr_type_value( p, end_set, cur ) ) != 0 )
-                return( ret );
+                goto error;
 
             if( *p == end_set )
                 break;
@@ -458,7 +502,10 @@ int mbedtls_x509_get_name( unsigned char **p, const unsigned char *end,
             cur->next = mbedtls_calloc( 1, sizeof( mbedtls_x509_name ) );
 
             if( cur->next == NULL )
-                return( MBEDTLS_ERR_X509_ALLOC_FAILED );
+            {
+                ret = MBEDTLS_ERR_X509_ALLOC_FAILED;
+                goto error;
+            }
 
             cur = cur->next;
         }
@@ -472,10 +519,20 @@ int mbedtls_x509_get_name( unsigned char **p, const unsigned char *end,
         cur->next = mbedtls_calloc( 1, sizeof( mbedtls_x509_name ) );
 
         if( cur->next == NULL )
-            return( MBEDTLS_ERR_X509_ALLOC_FAILED );
+        {
+            ret = MBEDTLS_ERR_X509_ALLOC_FAILED;
+            goto error;
+        }
 
         cur = cur->next;
     }
+
+error:
+    /* Skip the first element as we did not allocate it */
+    mbedtls_asn1_free_named_data_list_shallow( head->next );
+    head->next = NULL;
+
+    return( ret );
 }
 
 static int x509_parse_int( unsigned char **p, size_t n, int *res )
@@ -741,7 +798,7 @@ int mbedtls_x509_get_ext( unsigned char **p, const unsigned char *end,
 int mbedtls_x509_dn_gets( char *buf, size_t size, const mbedtls_x509_name *dn )
 {
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
-    size_t i, n;
+    size_t i, j, n;
     unsigned char c, merge = 0;
     const mbedtls_x509_name *name;
     const char *short_name = NULL;
@@ -775,17 +832,24 @@ int mbedtls_x509_dn_gets( char *buf, size_t size, const mbedtls_x509_name *dn )
             ret = mbedtls_snprintf( p, n, "\?\?=" );
         MBEDTLS_X509_SAFE_SNPRINTF;
 
-        for( i = 0; i < name->val.len; i++ )
+        for( i = 0, j = 0; i < name->val.len; i++, j++ )
         {
-            if( i >= sizeof( s ) - 1 )
-                break;
+            if( j >= sizeof( s ) - 1 )
+                return( MBEDTLS_ERR_X509_BUFFER_TOO_SMALL );
 
             c = name->val.p[i];
+            // Special characters requiring escaping, RFC 1779
+            if( c && strchr( ",=+<>#;\"\\", c ) )
+            {
+                if( j + 1 >= sizeof( s ) - 1 )
+                    return( MBEDTLS_ERR_X509_BUFFER_TOO_SMALL );
+                s[j++] = '\\';
+            }
             if( c < 32 || c >= 127 )
-                 s[i] = '?';
-            else s[i] = c;
+                 s[j] = '?';
+            else s[j] = c;
         }
-        s[i] = '\0';
+        s[j] = '\0';
         ret = mbedtls_snprintf( p, n, "%s", s );
         MBEDTLS_X509_SAFE_SNPRINTF;
 
@@ -855,16 +919,15 @@ int mbedtls_x509_sig_alg_gets( char *buf, size_t size, const mbedtls_x509_buf *s
     if( pk_alg == MBEDTLS_PK_RSASSA_PSS )
     {
         const mbedtls_pk_rsassa_pss_options *pss_opts;
-        const mbedtls_md_info_t *md_info, *mgf_md_info;
 
         pss_opts = (const mbedtls_pk_rsassa_pss_options *) sig_opts;
 
-        md_info = mbedtls_md_info_from_type( md_alg );
-        mgf_md_info = mbedtls_md_info_from_type( pss_opts->mgf1_hash_id );
+        const char *name = md_type_to_string( md_alg );
+        const char *mgf_name = md_type_to_string( pss_opts->mgf1_hash_id );
 
         ret = mbedtls_snprintf( p, n, " (%s, MGF1-%s, 0x%02X)",
-                              md_info ? mbedtls_md_get_name( md_info ) : "???",
-                              mgf_md_info ? mbedtls_md_get_name( mgf_md_info ) : "???",
+                              name ? name : "???",
+                              mgf_name ? mgf_name : "???",
                               (unsigned int) pss_opts->expected_salt_len );
         MBEDTLS_X509_SAFE_SNPRINTF;
     }

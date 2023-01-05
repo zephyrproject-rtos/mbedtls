@@ -20,16 +20,7 @@
 
 #include "mbedtls/build_info.h"
 
-#if defined(MBEDTLS_PLATFORM_C)
 #include "mbedtls/platform.h"
-#else
-#include <stdio.h>
-#include <stdlib.h>
-#define mbedtls_printf          printf
-#define mbedtls_exit            exit
-#define MBEDTLS_EXIT_SUCCESS    EXIT_SUCCESS
-#define MBEDTLS_EXIT_FAILURE    EXIT_FAILURE
-#endif
 
 /*
  * We're creating and connecting the socket "manually" rather than using the
@@ -37,7 +28,7 @@
  * dominate memory usage in small configurations. For the sake of simplicity,
  * only a Unix version is implemented.
  *
- * Warning: we are breaking some of the abtractions from the NET layer here.
+ * Warning: we are breaking some of the abstractions from the NET layer here.
  * This is not a good example for general use. This programs has the specific
  * goal of minimizing use of the libc functions on full-blown OSes.
  */

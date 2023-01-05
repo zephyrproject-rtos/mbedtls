@@ -219,6 +219,8 @@ static int psa_snprint_algorithm(char *buffer, size_t buffer_size,
     case PSA_ALG_GCM: append(&buffer, buffer_size, &required_size, "PSA_ALG_GCM", 11); break;
     case PSA_ALG_HASH_EDDSA_BASE: append(&buffer, buffer_size, &required_size, "PSA_ALG_HASH_EDDSA_BASE", 23); break;
     case PSA_ALG_HKDF_BASE: append(&buffer, buffer_size, &required_size, "PSA_ALG_HKDF_BASE", 17); break;
+    case PSA_ALG_HKDF_EXPAND_BASE: append(&buffer, buffer_size, &required_size, "PSA_ALG_HKDF_EXPAND_BASE", 24); break;
+    case PSA_ALG_HKDF_EXTRACT_BASE: append(&buffer, buffer_size, &required_size, "PSA_ALG_HKDF_EXTRACT_BASE", 25); break;
     case PSA_ALG_HMAC_BASE: append(&buffer, buffer_size, &required_size, "PSA_ALG_HMAC_BASE", 17); break;
     case PSA_ALG_JPAKE: append(&buffer, buffer_size, &required_size, "PSA_ALG_JPAKE", 13); break;
     case PSA_ALG_MD5: append(&buffer, buffer_size, &required_size, "PSA_ALG_MD5", 11); break;
@@ -246,6 +248,7 @@ static int psa_snprint_algorithm(char *buffer, size_t buffer_size,
     case PSA_ALG_SHA_512_224: append(&buffer, buffer_size, &required_size, "PSA_ALG_SHA_512_224", 19); break;
     case PSA_ALG_SHA_512_256: append(&buffer, buffer_size, &required_size, "PSA_ALG_SHA_512_256", 19); break;
     case PSA_ALG_STREAM_CIPHER: append(&buffer, buffer_size, &required_size, "PSA_ALG_STREAM_CIPHER", 21); break;
+    case PSA_ALG_TLS12_ECJPAKE_TO_PMS: append(&buffer, buffer_size, &required_size, "PSA_ALG_TLS12_ECJPAKE_TO_PMS", 28); break;
     case PSA_ALG_TLS12_PRF_BASE: append(&buffer, buffer_size, &required_size, "PSA_ALG_TLS12_PRF_BASE", 22); break;
     case PSA_ALG_TLS12_PSK_TO_MS_BASE: append(&buffer, buffer_size, &required_size, "PSA_ALG_TLS12_PSK_TO_MS_BASE", 28); break;
     case PSA_ALG_XTS: append(&buffer, buffer_size, &required_size, "PSA_ALG_XTS", 11); break;
@@ -281,6 +284,20 @@ static int psa_snprint_algorithm(char *buffer, size_t buffer_size,
         } else if (PSA_ALG_IS_HKDF(core_alg)) {
             append(&buffer, buffer_size, &required_size,
                    "PSA_ALG_HKDF(", 12 + 1);
+            append_with_alg(&buffer, buffer_size, &required_size,
+                            psa_hash_algorithm_name,
+                            PSA_ALG_GET_HASH(core_alg));
+            append(&buffer, buffer_size, &required_size, ")", 1);
+        } else if (PSA_ALG_IS_HKDF_EXPAND(core_alg)) {
+            append(&buffer, buffer_size, &required_size,
+                   "PSA_ALG_HKDF_EXPAND(", 19 + 1);
+            append_with_alg(&buffer, buffer_size, &required_size,
+                            psa_hash_algorithm_name,
+                            PSA_ALG_GET_HASH(core_alg));
+            append(&buffer, buffer_size, &required_size, ")", 1);
+        } else if (PSA_ALG_IS_HKDF_EXTRACT(core_alg)) {
+            append(&buffer, buffer_size, &required_size,
+                   "PSA_ALG_HKDF_EXTRACT(", 20 + 1);
             append_with_alg(&buffer, buffer_size, &required_size,
                             psa_hash_algorithm_name,
                             PSA_ALG_GET_HASH(core_alg));

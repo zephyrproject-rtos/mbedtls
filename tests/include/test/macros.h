@@ -28,20 +28,7 @@
 
 #include <stdlib.h>
 
-#if defined(MBEDTLS_PLATFORM_C)
 #include "mbedtls/platform.h"
-#else
-#include <stdio.h>
-#define mbedtls_fprintf    fprintf
-#define mbedtls_snprintf   snprintf
-#define mbedtls_calloc     calloc
-#define mbedtls_free       free
-#define mbedtls_exit       exit
-#define mbedtls_time       time
-#define mbedtls_time_t     time_t
-#define MBEDTLS_EXIT_SUCCESS EXIT_SUCCESS
-#define MBEDTLS_EXIT_FAILURE EXIT_FAILURE
-#endif
 
 #if defined(MBEDTLS_MEMORY_BUFFER_ALLOC_C)
 #include "mbedtls/memory_buffer_alloc.h"
@@ -86,6 +73,32 @@
     do {                                                                \
         if( ! mbedtls_test_equal( #expr1 " == " #expr2, __LINE__, __FILE__, \
                                   expr1, expr2 ) )                      \
+            goto exit;                                                  \
+    } while( 0 )
+
+/** Evaluate two unsigned integer expressions and fail the test case
+ * if they are not in increasing order (left <= right).
+ *
+ * \param expr1     An integral-typed expression to evaluate.
+ * \param expr2     Another integral-typed expression to evaluate.
+ */
+#define TEST_LE_U( expr1, expr2 )                                       \
+    do {                                                                \
+        if( ! mbedtls_test_le_u( #expr1 " <= " #expr2, __LINE__, __FILE__, \
+                                 expr1, expr2 ) )                      \
+            goto exit;                                                  \
+    } while( 0 )
+
+/** Evaluate two signed integer expressions and fail the test case
+ * if they are not in increasing order (left <= right).
+ *
+ * \param expr1     An integral-typed expression to evaluate.
+ * \param expr2     Another integral-typed expression to evaluate.
+ */
+#define TEST_LE_S( expr1, expr2 )                                       \
+    do {                                                                \
+        if( ! mbedtls_test_le_s( #expr1 " <= " #expr2, __LINE__, __FILE__, \
+                                 expr1, expr2 ) )                      \
             goto exit;                                                  \
     } while( 0 )
 

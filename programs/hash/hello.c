@@ -19,16 +19,7 @@
 
 #include "mbedtls/build_info.h"
 
-#if defined(MBEDTLS_PLATFORM_C)
 #include "mbedtls/platform.h"
-#else
-#include <stdlib.h>
-#include <stdio.h>
-#define mbedtls_printf       printf
-#define mbedtls_exit         exit
-#define MBEDTLS_EXIT_SUCCESS EXIT_SUCCESS
-#define MBEDTLS_EXIT_FAILURE EXIT_FAILURE
-#endif
 
 #if defined(MBEDTLS_MD5_C)
 #include "mbedtls/md5.h"
@@ -58,11 +49,6 @@ int main( void )
         mbedtls_printf( "%02x", digest[i] );
 
     mbedtls_printf( "\n\n" );
-
-#if defined(_WIN32)
-    mbedtls_printf( "  Press Enter to exit this program.\n" );
-    fflush( stdout ); getchar();
-#endif
 
     mbedtls_exit( MBEDTLS_EXIT_SUCCESS );
 }

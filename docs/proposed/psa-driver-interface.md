@@ -60,6 +60,10 @@ How to provide the driver description file, the C header files and the object co
 
 The concrete syntax for a driver description file is JSON.
 
+In addition to the properties described here, any JSON object may have a property called `"_comment"` of type string, which will be ignored.
+
+PSA Cryptography core implementations may support additional properties. Such properties must use names consisting of the implementation's name, a slash, and additional characters. For example, the Yoyodyne implementation may use property names such as `"yoyodyne/foo"` and `"yoyodyne/widgets/girth"`.
+
 #### Driver description list
 
 PSA Cryptography core implementations should support multiple drivers. The driver description files are passed to the implementation as an ordered list in an unspecified manner. This may be, for example, a list of file names passed on a command line, or a JSON list whose elements are individual driver descriptions.
@@ -68,7 +72,7 @@ PSA Cryptography core implementations should support multiple drivers. The drive
 
 A driver description is a JSON object containing the following properties:
 
-* `"prefix"` (mandatory, string). This must be a valid prefix for a C identifier. All the types and functions provided by the driver have a name that starts with this prefix unless overridden with a `"name"` element in the applicable capability as described below.
+* `"prefix"` (mandatory, string). This must be a valid, non-empty prefix for a C identifier. All the types and functions provided by the driver have a name that starts with this prefix unless overridden with a `"name"` element in the applicable capability as described below.
 * `"type"` (mandatory, string). One of `"transparent"` or `"opaque"`.
 * `"headers"` (optional, array of strings). A list of header files. These header files must define the types, macros and constants referenced by the driver description. They may declare the entry point functions, but this is not required. They may include other PSA headers and standard headers of the platform. Whether they may include other headers is implementation-specific. If omitted, the list of headers is empty. The header files must be present at the specified location relative to a directory on the compiler's include path when compiling glue code between the core and the drivers.
 * `"capabilities"` (mandatory, array of [capabilities](#driver-description-capability)).
@@ -237,7 +241,7 @@ The entry points that implement each step of a multi-part operation are grouped 
 1. The core calls the `xxx_setup` entry point for this operation family. If this fails, the core destroys the operation context object without calling any other driver entry point on it.
 1. The core calls other entry points that manipulate the operation context object, respecting the constraints.
 1. If any entry point fails, the core calls the driver's `xxx_abort` entry point for this operation family, then destroys the operation context object without calling any other driver entry point on it.
-1. If a “finish” entry point fails, the core destroys the operation context object without calling any other driver entry point on it. The finish entry points are: *prefix*`_mac_sign_finish`, *prefix*`_mac_verify_finish`, *prefix*`_cipher_fnish`, *prefix*`_aead_finish`, *prefix*`_aead_verify`.
+1. If a “finish” entry point fails, the core destroys the operation context object without calling any other driver entry point on it. The finish entry points are: *prefix*`_mac_sign_finish`, *prefix*`_mac_verify_finish`, *prefix*`_cipher_finish`, *prefix*`_aead_finish`, *prefix*`_aead_verify`.
 
 If a driver implements a multi-part operation but not the corresponding single-part operation, the core calls the driver's multipart operation entry points to perform the single-part operation.
 

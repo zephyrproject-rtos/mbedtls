@@ -36,13 +36,7 @@
 #include "psa/internal_trusted_storage.h"
 #endif
 
-#if defined(MBEDTLS_PLATFORM_C)
 #include "mbedtls/platform.h"
-#else
-#include <stdlib.h>
-#define mbedtls_calloc   calloc
-#define mbedtls_free     free
-#endif
 
 
 
@@ -349,6 +343,7 @@ psa_status_t psa_save_persistent_key( const psa_core_key_attributes_t *attr,
     status = psa_crypto_storage_store( attr->id,
                                        storage_data, storage_data_length );
 
+    mbedtls_platform_zeroize( storage_data, storage_data_length );
     mbedtls_free( storage_data );
 
     return( status );
@@ -394,6 +389,7 @@ psa_status_t psa_load_persistent_key( psa_core_key_attributes_t *attr,
         status = PSA_ERROR_STORAGE_FAILURE;
 
 exit:
+    mbedtls_platform_zeroize( loaded_data, storage_data_length );
     mbedtls_free( loaded_data );
     return( status );
 }

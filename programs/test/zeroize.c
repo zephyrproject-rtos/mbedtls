@@ -29,15 +29,7 @@
 
 #include <stdio.h>
 
-#if defined(MBEDTLS_PLATFORM_C)
 #include "mbedtls/platform.h"
-#else
-#include <stdlib.h>
-#define mbedtls_printf     printf
-#define mbedtls_exit       exit
-#define MBEDTLS_EXIT_SUCCESS EXIT_SUCCESS
-#define MBEDTLS_EXIT_FAILURE EXIT_FAILURE
-#endif
 
 #include "mbedtls/platform_util.h"
 
@@ -63,7 +55,7 @@ int main( int argc, char** argv )
 
     if( argc != 2 )
     {
-        mbedtls_printf( "This program takes exactly 1 agument\n" );
+        mbedtls_printf( "This program takes exactly 1 argument\n" );
         usage();
         mbedtls_exit( exit_code );
     }
