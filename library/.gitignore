@@ -7,4 +7,4 @@ libmbed*
 /error.c
 /version_features.c
 /ssl_debug_helpers_generated.c
-/ssl_debug_helpers_generated.h
+/psa_crypto_driver_wrappers.c
