@@ -3073,25 +3073,6 @@ psa_status_t psa_asymmetric_encrypt( mbedtls_svc_key_id_t key,
         goto exit;
     }
 
-#if defined(PSA_CRYPTO_DRIVER_CC3XX)
-    psa_key_attributes_t attributes = {
-      .core = slot->attr
-    };
-
-    status = psa_driver_wrapper_asymmetric_encrypt( &attributes,
-                                                    slot->key.data,
-                                                    slot->key.bytes,
-                                                    alg,
-                                                    input,
-                                                    input_length,
-                                                    salt,
-                                                    salt_length,
-                                                    output,
-                                                    output_size,
-                                                    output_length );
-    goto exit;
-#endif
-
     if( PSA_KEY_TYPE_IS_RSA( slot->attr.type ) )
     {
 #if defined(MBEDTLS_PSA_BUILTIN_ALG_RSA_PKCS1V15_CRYPT) || \
@@ -3206,25 +3187,6 @@ psa_status_t psa_asymmetric_decrypt( mbedtls_svc_key_id_t key,
         status = PSA_ERROR_INVALID_ARGUMENT;
         goto exit;
     }
-
-#if defined(PSA_CRYPTO_DRIVER_CC3XX)
-    psa_key_attributes_t attributes = {
-      .core = slot->attr
-    };
-
-    status = psa_driver_wrapper_asymmetric_decrypt( &attributes,
-                                                    slot->key.data,
-                                                    slot->key.bytes,
-                                                    alg,
-                                                    input,
-                                                    input_length,
-                                                    salt,
-                                                    salt_length,
-                                                    output,
-                                                    output_size,
-                                                    output_length );
-    goto exit;
-#endif
 
     if( slot->attr.type == PSA_KEY_TYPE_RSA_KEY_PAIR )
     {
@@ -5537,30 +5499,11 @@ psa_status_t psa_raw_key_agreement( psa_algorithm_t alg,
     if( status != PSA_SUCCESS )
         goto exit;
 
-    psa_key_attributes_t attributes = {
-      .core = slot->attr
-    };
+    status = psa_key_agreement_raw_internal( alg, slot,
+                                             peer_key, peer_key_length,
+                                             output, output_size,
+                                             output_length );
 
-    status = psa_driver_wrapper_key_agreement( &attributes,
-                                               slot->key.data,
-                                               slot->key.bytes,
-                                               peer_key,
-                                               peer_key_length,
-                                               output,
-                                               output_size,
-                                               output_length,
-                                               alg );
-
-    if( status == PSA_ERROR_NOT_SUPPORTED )
-    {
-        status = psa_key_agreement_raw_internal( alg,
-                                                 slot,
-                                                 peer_key,
-                                                 peer_key_length,
-                                                 output,
-                                                 output_size,
-                                                 output_length);
-    }
 exit:
     if( status != PSA_SUCCESS )
     {
