@@ -134,7 +134,7 @@ Example 2: the following capability declares that the driver can perform determ
     "entry_points": ["sign_hash"],
     "algorithms": ["PSA_ALG_DETERMINISTIC_ECDSA(PSA_ALG_SHA_256)",
                    "PSA_ALG_DETERMINISTIC_ECDSA(PSA_ALG_SHA_384)"],
-    "key_types": ["PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_CURVE_SECP_R1)"],
+    "key_types": ["PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1)"],
     "key_sizes": [256, 384]
 }
 ```
@@ -164,7 +164,7 @@ The name `_` may be used instead of a curve or group to indicate that the capabi
 Valid examples:
 ```
 PSA_KEY_TYPE_AES
-PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_CURVE_SECP_R1)
+PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1)
 PSA_KEY_TYPE_ECC_KEY_PAIR(_)
 ```
 
@@ -237,7 +237,7 @@ The entry points that implement each step of a multi-part operation are grouped 
 1. The core calls the `xxx_setup` entry point for this operation family. If this fails, the core destroys the operation context object without calling any other driver entry point on it.
 1. The core calls other entry points that manipulate the operation context object, respecting the constraints.
 1. If any entry point fails, the core calls the driver's `xxx_abort` entry point for this operation family, then destroys the operation context object without calling any other driver entry point on it.
-1. If a “finish” entry point fails, the core destroys the operation context object without calling any other driver entry point on it. The finish entry points are: *prefix*`_mac_sign_finish`, *prefix*`_mac_verify_finish`, *prefix*`_cipher_fnish`, *prefix*`_aead_finish`, *prefix*`_aead_verify`.
+1. If a “finish” entry point fails, the core destroys the operation context object without calling any other driver entry point on it. The finish entry points are: *prefix*`_mac_sign_finish`, *prefix*`_mac_verify_finish`, *prefix*`_cipher_finish`, *prefix*`_aead_finish`, *prefix*`_aead_verify`.
 
 If a driver implements a multi-part operation but not the corresponding single-part operation, the core calls the driver's multipart operation entry points to perform the single-part operation.
 
@@ -810,7 +810,7 @@ psa_status_t acme_get_builtin_key(psa_drv_slot_number_t slot_number,
 
 If this function returns `PSA_SUCCESS` or `PSA_ERROR_BUFFER_TOO_SMALL`, it must fill `attributes` with the attributes of the key (except for the key identifier). On success, this function must also fill `key_buffer` with the key context.
 
-On entry, `psa_get_key_lifetime(attributes)` is the location at which the driver was declared and the persistence level `#PSA_KEY_LIFETIME_PERSISTENT`. The driver entry point may change the lifetime to one with the same location but a different persistence level. The standard attributes other than the key identifier and lifetime have the value conveyed by `PSA_KEY_ATTRIBUTES_INIT`.
+On entry, `psa_get_key_lifetime(attributes)` is the location at which the driver was declared and a persistence level with which the platform is attempting to register the key. The driver entry point may choose to change the lifetime (`psa_set_key_lifetime(attributes, lifetime)`) of the reported key attributes to one with the same location but a different persistence level, in case the driver has more specific knowledge about the actual persistence level of the key which is being retrieved. For example, if a driver knows it cannot delete a key, it may override the persistence level in the lifetime to `PSA_KEY_PERSISTENCE_READ_ONLY`. The standard attributes other than the key identifier and lifetime have the value conveyed by `PSA_KEY_ATTRIBUTES_INIT`.
 
 The output parameter `key_buffer` points to a writable buffer of `key_buffer_size` bytes. If the driver has a [`"builtin_key_size"` property](#key-format-for-opaque-drivers) property, `key_buffer_size` has this value, otherwise `key_buffer_size` has the value determined from the key type and size.
 
