@@ -80,20 +80,6 @@
 #include MBEDTLS_USER_CONFIG_FILE
 #endif
 
-/* Auto-enable MBEDTLS_MD_LIGHT based on MBEDTLS_MD_C.
- * This allows checking for MD_LIGHT rather than MD_LIGHT || MD_C.
- */
-#if defined(MBEDTLS_MD_C)
-#define MBEDTLS_MD_LIGHT
-#endif
-
-/* Auto-enable MBEDTLS_MD_LIGHT if some module needs it.
- */
-#if defined(MBEDTLS_PEM_PARSE_C) || \
-    defined(MBEDTLS_RSA_C)
-#define MBEDTLS_MD_LIGHT
-#endif
-
 /* If MBEDTLS_PSA_CRYPTO_C is defined, make sure MBEDTLS_PSA_CRYPTO_CLIENT
  * is defined as well to include all PSA code.
  */
@@ -146,6 +132,20 @@
 #if defined(MBEDTLS_PSA_CRYPTO_CONFIG) /* PSA_WANT_xxx influences MBEDTLS_xxx */ || \
     defined(MBEDTLS_PSA_CRYPTO_C) /* MBEDTLS_xxx influences PSA_WANT_xxx */
 #include "mbedtls/config_psa.h"
+#endif
+
+/* Auto-enable MBEDTLS_MD_LIGHT based on MBEDTLS_MD_C.
+ * This allows checking for MD_LIGHT rather than MD_LIGHT || MD_C.
+ */
+#if defined(MBEDTLS_MD_C)
+#define MBEDTLS_MD_LIGHT
+#endif
+
+/* Auto-enable MBEDTLS_MD_LIGHT if some module needs it.
+ */
+#if defined(MBEDTLS_PEM_PARSE_C) || \
+    defined(MBEDTLS_RSA_C)
+#define MBEDTLS_MD_LIGHT
 #endif
 
 #include "mbedtls/check_config.h"
