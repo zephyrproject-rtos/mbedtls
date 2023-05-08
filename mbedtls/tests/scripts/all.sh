@@ -376,7 +376,7 @@ armc6_build_test()
 
     msg "build: ARM Compiler 6 ($FLAGS)"
     ARM_TOOL_VARIANT="ult" CC="$ARMC6_CC" AR="$ARMC6_AR" CFLAGS="$FLAGS" \
-                    WARNING_CFLAGS='-xc -std=c99' make lib
+                    WARNING_CFLAGS='-Werror -xc -std=c99' make lib
 
     msg "size: ARM Compiler 6 ($FLAGS)"
     "$ARMC6_FROMELF" -z library/*.o
@@ -1038,6 +1038,18 @@ component_test_no_renegotiation () {
 
     msg "test: !MBEDTLS_SSL_RENEGOTIATION - ssl-opt.sh (ASan build)" # ~ 6 min
     tests/ssl-opt.sh
+}
+
+component_test_no_certs () {
+    msg "build: full minus MBEDTLS_CERTS_C"
+    scripts/config.py full
+    scripts/config.py unset MBEDTLS_CERTS_C
+    # Quick build+test (we're checking for stray uses of the test certs,
+    # not expecting their absence to lead to subtle problems).
+    make
+
+    msg "test: full minus MBEDTLS_CERTS_C - main suites"
+    make test
 }
 
 component_test_no_pem_no_fs () {
@@ -2728,6 +2740,19 @@ component_test_no_date_time () {
     make test
 }
 
+component_test_alt_timing() {
+    msg "build: alternate timing implementation"
+    scripts/config.py set MBEDTLS_TIMING_ALT
+    make lib TEST_TIMING_ALT_IMPL=1 CFLAGS="-I../tests/src/external_timing"
+
+    msg "test: MBEDTLS_TIMING_ALT - test suites"
+    make test TEST_TIMING_ALT_IMPL=1 CFLAGS="-I../tests/src/external_timing"
+
+    msg "selftest - MBEDTLS-TIMING_ALT"
+    make programs TEST_TIMING_ALT_IMPL=1 CFLAGS="-I../../tests/src/external_timing -I../tests/src/external_timing"
+    programs/test/selftest
+}
+
 component_test_platform_calloc_macro () {
     msg "build: MBEDTLS_PLATFORM_{CALLOC/FREE}_MACRO enabled (ASan build)"
     scripts/config.py set MBEDTLS_PLATFORM_MEMORY
@@ -2943,7 +2968,7 @@ component_test_m32_o0 () {
 }
 support_test_m32_o0 () {
     case $(uname -m) in
-        *64*) true;;
+        amd64|x86_64) true;;
         *) false;;
     esac
 }
@@ -3156,6 +3181,11 @@ component_build_armcc () {
     # ARM Compiler 6 - Target ARMv8-A - AArch64
     armc6_build_test "--target=aarch64-arm-none-eabi -march=armv8.2-a"
 }
+support_build_armcc () {
+    armc5_cc="$ARMC5_BIN_DIR/armcc"
+    armc6_cc="$ARMC6_BIN_DIR/armclang"
+    (check_tools "$armc5_cc" "$armc6_cc" > /dev/null 2>&1)
+}
 
 component_build_ssl_hw_record_accel() {
     msg "build: default config with MBEDTLS_SSL_HW_RECORD_ACCEL enabled"
@@ -3186,8 +3216,8 @@ component_build_mingw () {
     make WINDOWS_BUILD=1 clean
 }
 support_build_mingw() {
-    case $(i686-w64-mingw32-gcc -dumpversion) in
-        [0-5]*) false;;
+    case $(i686-w64-mingw32-gcc -dumpversion 2>/dev/null) in
+        [0-5]*|"") false;;
         *) true;;
     esac
 }

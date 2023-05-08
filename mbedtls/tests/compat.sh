@@ -215,17 +215,6 @@ filter()
   echo "$NEW_LIST" | sed -e 's/[[:space:]][[:space:]]*/ /g' -e 's/^ //' -e 's/ $//'
 }
 
-# OpenSSL 1.0.1h with -Verify wants a ClientCertificate message even for
-# PSK ciphersuites with DTLS, which is incorrect, so disable them for now
-check_openssl_server_bug()
-{
-    if test "X$VERIFY" = "XYES" && is_dtls "$MODE" && \
-        echo "$1" | grep "^TLS-PSK" >/dev/null;
-    then
-        SKIP_NEXT="YES"
-    fi
-}
-
 filter_ciphersuites()
 {
     if [ "X" != "X$FILTER" -o "X" != "X$EXCLUDE" ];
@@ -242,7 +231,7 @@ filter_ciphersuites()
 
     # For GnuTLS client -> mbed TLS server,
     # we need to force IPv4 by connecting to 127.0.0.1 but then auth fails
-    if [ "X$VERIFY" = "XYES" ] && is_dtls "$MODE"; then
+    if is_dtls "$MODE" && [ "X$VERIFY" = "XYES" ]; then
         G_CIPHERS=""
     fi
 }
@@ -872,6 +861,16 @@ add_mbedtls_ciphersuites()
     esac
 }
 
+# o_check_ciphersuite CIPHER_SUITE_NAME
+o_check_ciphersuite()
+{
+    if [ "${O_SUPPORT_ECDH}" = "NO" ]; then
+        case "$1" in
+            *ECDH-*) SKIP_NEXT="YES"
+        esac
+    fi
+}
+
 setup_arguments()
 {
     O_MODE=""
@@ -943,7 +942,6 @@ setup_arguments()
     M_CLIENT_ARGS="server_port=$PORT server_addr=127.0.0.1 force_version=$MODE"
     O_CLIENT_ARGS="-connect localhost:$PORT -$O_MODE"
     G_CLIENT_ARGS="-p $PORT --debug 3 $G_MODE"
-    G_CLIENT_PRIO="NONE:$G_PRIO_MODE:+COMP-NULL:+CURVE-ALL:+SIGN-ALL"
 
     # Newer versions of OpenSSL have a syntax to enable all "ciphers", even
     # low-security ones. This covers not just cipher suites but also protocol
@@ -957,6 +955,11 @@ setup_arguments()
             O_CLIENT_ARGS="$O_CLIENT_ARGS -cipher ALL@SECLEVEL=0"
             O_SERVER_ARGS="$O_SERVER_ARGS -cipher ALL@SECLEVEL=0"
             ;;
+    esac
+
+    case $($OPENSSL ciphers ALL) in
+        *ECDH-ECDSA*|*ECDH-RSA*) O_SUPPORT_ECDH="YES";;
+        *) O_SUPPORT_ECDH="NO";;
     esac
 
     if [ "X$VERIFY" = "XYES" ];
@@ -1092,15 +1095,17 @@ start_server() {
     echo "$SERVER_CMD" > $SRV_OUT
     # for servers without -www or equivalent
     while :; do echo bla; sleep 1; done | $SERVER_CMD >> $SRV_OUT 2>&1 &
-    PROCESS_ID=$!
+    SRV_PID=$!
 
-    wait_server_start "$PORT" "$PROCESS_ID"
+    wait_server_start "$PORT" "$SRV_PID"
 }
 
 # terminate the running server
 stop_server() {
-    kill $PROCESS_ID 2>/dev/null
-    wait $PROCESS_ID 2>/dev/null
+    # For Ubuntu 22.04, `Terminated` message is outputed by wait command.
+    # To remove it from stdout, redirect stdout/stderr to SRV_OUT
+    kill $SRV_PID >/dev/null 2>&1
+    wait $SRV_PID >> $SRV_OUT 2>&1
 
     if [ "$MEMCHECK" -gt 0 ]; then
         if is_mbedtls "$SERVER_CMD" && has_mem_err $SRV_OUT; then
@@ -1116,7 +1121,7 @@ stop_server() {
 # kill the running server (used when killed by signal)
 cleanup() {
     rm -f $SRV_OUT $CLI_OUT
-    kill $PROCESS_ID >/dev/null 2>&1
+    kill $SRV_PID >/dev/null 2>&1
     kill $WATCHDOG_PID >/dev/null 2>&1
     exit 1
 }
@@ -1129,11 +1134,13 @@ wait_client_done() {
     ( sleep "$DOG_DELAY"; echo "TIMEOUT" >> $CLI_OUT; kill $CLI_PID ) &
     WATCHDOG_PID=$!
 
-    wait $CLI_PID
+    # For Ubuntu 22.04, `Terminated` message is outputed by wait command.
+    # To remove it from stdout, redirect stdout/stderr to CLI_OUT
+    wait $CLI_PID >> $CLI_OUT 2>&1
     EXIT=$?
 
-    kill $WATCHDOG_PID
-    wait $WATCHDOG_PID
+    kill $WATCHDOG_PID >/dev/null 2>&1
+    wait $WATCHDOG_PID >> $CLI_OUT 2>&1
 
     echo "EXIT: $EXIT" >> $CLI_OUT
 }
@@ -1142,7 +1149,6 @@ wait_client_done() {
 run_client() {
     # announce what we're going to do
     TESTS=$(( $TESTS + 1 ))
-    VERIF=$(echo $VERIFY | tr '[:upper:]' '[:lower:]')
     TITLE="`echo $1 | head -c1`->`echo $SERVER_NAME | head -c1`"
     TITLE="$TITLE $MODE,$VERIF $2"
     printf "%s " "$TITLE"
@@ -1169,7 +1175,7 @@ run_client() {
             if [ $EXIT -eq 0 ]; then
                 RESULT=0
             else
-                # If the cipher isn't supported...
+                # If it is NULL cipher ...
                 if grep 'Cipher is (NONE)' $CLI_OUT >/dev/null; then
                     RESULT=1
                 else
@@ -1339,9 +1345,20 @@ SKIP_NEXT="NO"
 
 trap cleanup INT TERM HUP
 
-for VERIFY in $VERIFIES; do
-    for MODE in $MODES; do
-        for TYPE in $TYPES; do
+for MODE in $MODES; do
+    for TYPE in $TYPES; do
+
+        # PSK cipher suites do not allow client certificate verification.
+        # This means PSK test cases with VERIFY=YES should be replaced by
+        # VERIFY=NO or be ignored. SUB_VERIFIES variable is used to constrain
+        # verification option for PSK test cases.
+        SUB_VERIFIES=$VERIFIES
+        if [ "$TYPE" = "PSK" ]; then
+            SUB_VERIFIES="NO"
+        fi
+
+        for VERIFY in $SUB_VERIFIES; do
+            VERIF=$(echo $VERIFY | tr '[:upper:]' '[:lower:]')
             for PEER in $PEERS; do
 
             setup_arguments
@@ -1371,7 +1388,7 @@ for VERIFY in $VERIFIES; do
                     if [ "X" != "X$M_CIPHERS" ]; then
                         start_server "OpenSSL"
                         for i in $M_CIPHERS; do
-                            check_openssl_server_bug $i
+                            o_check_ciphersuite "$i"
                             run_client mbedTLS $i
                         done
                         stop_server
@@ -1380,6 +1397,7 @@ for VERIFY in $VERIFIES; do
                     if [ "X" != "X$O_CIPHERS" ]; then
                         start_server "mbedTLS"
                         for i in $O_CIPHERS; do
+                            o_check_ciphersuite "$i"
                             run_client OpenSSL $i
                         done
                         stop_server

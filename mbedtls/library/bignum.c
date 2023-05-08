@@ -1280,7 +1280,7 @@ int mbedtls_mpi_sub_abs(mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi 
     /* Set the high limbs of X to match A. Don't touch the lower limbs
      * because X might be aliased to B, and we must not overwrite the
      * significant digits of B. */
-    if (A->n > n) {
+    if (A->n > n && A != X) {
         memcpy(X->p + n, A->p + n, (A->n - n) * ciL);
     }
     if (X->n > A->n) {
@@ -1427,6 +1427,7 @@ void mpi_mul_hlp(size_t i,
                  mbedtls_mpi_uint b)
 {
     mbedtls_mpi_uint c = 0, t = 0;
+    (void) t;                   /* Unused in some architectures */
 
 #if defined(MULADDC_HUIT)
     for (; i >= 8; i -= 8) {
@@ -1471,8 +1472,6 @@ void mpi_mul_hlp(size_t i,
             MULADDC_STOP
     }
 #endif /* MULADDC_HUIT */
-
-    t++;
 
     while (c != 0) {
         *d += c; c = (*d < c); d++;
@@ -2063,6 +2062,7 @@ int mbedtls_mpi_exp_mod(mbedtls_mpi *X, const mbedtls_mpi *A,
     size_t window_bitsize;
     size_t i, j, nblimbs;
     size_t bufsize, nbits;
+    size_t exponent_bits_in_window = 0;
     mbedtls_mpi_uint ei, mm, state;
     mbedtls_mpi RR, T, W[(size_t) 1 << MBEDTLS_MPI_WINDOW_SIZE], WW, Apos;
     int neg;
@@ -2236,7 +2236,6 @@ int mbedtls_mpi_exp_mod(mbedtls_mpi *X, const mbedtls_mpi *A,
     nblimbs = E->n;
     bufsize = 0;
     nbits   = 0;
-    size_t exponent_bits_in_window = 0;
     state   = 0;
 
     while (1) {
