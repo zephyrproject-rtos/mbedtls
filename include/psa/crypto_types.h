@@ -38,11 +38,7 @@
 /* Define the MBEDTLS_PRIVATE macro. */
 #include "mbedtls/private_access.h"
 
-#if defined(MBEDTLS_PSA_CRYPTO_PLATFORM_FILE)
-#include MBEDTLS_PSA_CRYPTO_PLATFORM_FILE
-#else
 #include "crypto_platform.h"
-#endif
 
 #include <stdint.h>
 

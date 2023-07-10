@@ -22,11 +22,7 @@
 #ifndef PSA_CRYPTO_H
 #define PSA_CRYPTO_H
 
-#if defined(MBEDTLS_PSA_CRYPTO_PLATFORM_FILE)
-#include MBEDTLS_PSA_CRYPTO_PLATFORM_FILE
-#else
 #include "crypto_platform.h"
-#endif
 
 #include <stddef.h>
 
@@ -4059,11 +4055,7 @@ psa_status_t psa_generate_key(const psa_key_attributes_t *attributes,
 
 /* The file "crypto_struct.h" contains definitions for
  * implementation-specific structs that are declared above. */
-#if defined(MBEDTLS_PSA_CRYPTO_STRUCT_FILE)
-#include MBEDTLS_PSA_CRYPTO_STRUCT_FILE
-#else
 #include "crypto_struct.h"
-#endif
 
 /* The file "crypto_extra.h" contains vendor-specific definitions. This
  * can include vendor-defined algorithms, extra functions, etc. */
