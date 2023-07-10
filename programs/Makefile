@@ -123,7 +123,6 @@ APPS = \
 	ssl/ssl_server2 \
 	test/benchmark \
 	test/query_compile_time_config \
-	test/query_included_headers \
 	test/selftest \
 	test/udp_proxy \
 	test/zeroize \
@@ -403,10 +402,6 @@ endif
 test/query_config.o: test/query_config.c test/query_config.h $(DEP)
 	echo "  CC    test/query_config.c"
 	$(CC) $(LOCAL_CFLAGS) $(CFLAGS) -c test/query_config.c -o $@
-
-test/query_included_headers$(EXEXT): test/query_included_headers.c $(DEP)
-	echo "  CC    test/query_included_headers.c"
-	$(CC) $(LOCAL_CFLAGS) $(CFLAGS) test/query_included_headers.c    $(LOCAL_LDFLAGS) $(LDFLAGS) -o $@
 
 test/selftest$(EXEXT): test/selftest.c $(DEP)
 	echo "  CC    test/selftest.c"
