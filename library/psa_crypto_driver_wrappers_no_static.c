@@ -52,6 +52,16 @@
 #include "tfm_builtin_key_loader.h"
 #endif /* PSA_CRYPTO_DRIVER_TFM_BUILTIN_KEY_LOADER */
 
+#if defined(PSA_CRYPTO_DRIVER_CC3XX)
+#ifndef PSA_CRYPTO_DRIVER_PRESENT
+#define PSA_CRYPTO_DRIVER_PRESENT
+#endif
+#ifndef PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT
+#define PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT
+#endif
+#include "cc3xx.h"
+#endif /* PSA_CRYPTO_DRIVER_CC3XX */
+
 /* END-driver headers */
 
 /* Auto-generated values depending on which drivers are registered.
@@ -66,6 +76,9 @@ enum {
 #if defined(PSA_CRYPTO_DRIVER_TFM_BUILTIN_KEY_LOADER)
     PSA_CRYPTO_TFM_BUILTIN_KEY_LOADER_DRIVER_ID,
 #endif /* PSA_CRYPTO_DRIVER_TFM_BUILTIN_KEY_LOADER */
+#if defined(PSA_CRYPTO_DRIVER_CC3XX)
+    PSA_CRYPTO_CC3XX_DRIVER_ID,
+#endif /* PSA_CRYPTO_DRIVER_CC3XX */
 };
 
 /* END-driver id */
@@ -195,6 +208,17 @@ psa_status_t psa_driver_wrapper_export_public_key(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif
+
+#if defined(PSA_CRYPTO_DRIVER_CC3XX)
+            status = cc3xx_export_public_key(
+                         attributes,
+                         key_buffer,
+                         key_buffer_size,
+                         data,
+                         data_size,
+                         data_length );
+            return( status );
+#endif /* PSA_CRYPTO_DRIVER_CC3XX */
 
 #if (defined(MBEDTLS_PSA_P256M_DRIVER_ENABLED) )
             status = p256_transparent_export_public_key
