@@ -1573,11 +1573,7 @@ static psa_status_t psa_validate_key_attributes(
             return PSA_ERROR_INVALID_ARGUMENT;
         }
     } else {
-#ifdef MBEDTLS_PSA_CRYPTO_SE_C
-        if (!psa_is_valid_key_id(psa_get_key_id(attributes), 1)) {
-#else
         if (!psa_is_valid_key_id(psa_get_key_id(attributes), 0)) {
-#endif
             return PSA_ERROR_INVALID_ARGUMENT;
         }
     }
