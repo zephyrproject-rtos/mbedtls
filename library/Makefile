@@ -8,20 +8,6 @@ GENERATED_FILES := \
 	psa_crypto_driver_wrappers.h \
 	psa_crypto_driver_wrappers_no_static.c
 
-ifneq ($(GENERATED_FILES),$(wildcard $(GENERATED_FILES)))
-    ifeq (,$(wildcard $(MBEDTLS_PATH)/framework/exported.make))
-        # Use the define keyword to get a multi-line message.
-        # GNU make appends ".  Stop.", so tweak the ending of our message accordingly.
-        define error_message
-$(MBEDTLS_PATH)/framework/exported.make not found.
-Run `git submodule update --init` to fetch the submodule contents.
-This is a fatal error
-        endef
-        $(error $(error_message))
-    endif
-    include $(MBEDTLS_PATH)/framework/exported.make
-endif
-
 # Also see "include/mbedtls/mbedtls_config.h"
 
 CFLAGS	?= -O2
