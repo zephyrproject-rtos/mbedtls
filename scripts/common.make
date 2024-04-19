@@ -4,8 +4,6 @@ ifndef MBEDTLS_PATH
 MBEDTLS_PATH := ..
 endif
 
-include $(MBEDTLS_PATH)/framework/exported.make
-
 CFLAGS	?= -O2
 WARNING_CFLAGS ?= -Wall -Wextra -Wformat=2 -Wno-format-nonliteral
 WARNING_CXXFLAGS ?= -Wall -Wextra -Wformat=2 -Wno-format-nonliteral -std=c++11 -pedantic
