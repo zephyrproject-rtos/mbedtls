@@ -1,14 +1,8 @@
-ifndef MBEDTLS_PATH
-MBEDTLS_PATH := ..
-endif
-
 GENERATED_FILES := \
 	error.c version_features.c \
 	ssl_debug_helpers_generated.c \
 	psa_crypto_driver_wrappers.h \
 	psa_crypto_driver_wrappers_no_static.c
-
-include $(MBEDTLS_PATH)/framework/exported.make
 
 # Also see "include/mbedtls/mbedtls_config.h"
 

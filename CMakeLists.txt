@@ -283,8 +283,6 @@ if(LIB_INSTALL_DIR)
     set(CMAKE_INSTALL_LIBDIR "${LIB_INSTALL_DIR}")
 endif()
 
-add_subdirectory(framework)
-
 add_subdirectory(include)
 
 add_subdirectory(3rdparty)
