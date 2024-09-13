@@ -180,6 +180,7 @@ EXCLUDE_FROM_FULL = frozenset([
     #pylint: disable=line-too-long
     'MBEDTLS_AES_ONLY_128_BIT_KEY_LENGTH', # interacts with CTR_DRBG_128_BIT_KEY
     'MBEDTLS_AES_USE_HARDWARE_ONLY', # hardware dependency
+    'MBEDTLS_BLOCK_CIPHER_NO_DECRYPT', # incompatible with ECB in PSA, CBC/XTS/NIST_KW/DES
     'MBEDTLS_CTR_DRBG_USE_128_BIT_KEY', # interacts with ENTROPY_FORCE_SHA256
     'MBEDTLS_DEPRECATED_REMOVED', # conflicts with deprecated options
     'MBEDTLS_DEPRECATED_WARNING', # conflicts with deprecated options
@@ -197,14 +198,16 @@ EXCLUDE_FROM_FULL = frozenset([
     'MBEDTLS_NO_UDBL_DIVISION', # influences anything that uses bignum
     'MBEDTLS_PSA_P256M_DRIVER_ENABLED', # influences SECP256R1 KeyGen/ECDH/ECDSA
     'MBEDTLS_PLATFORM_NO_STD_FUNCTIONS', # removes a feature
+    'MBEDTLS_PSA_ASSUME_EXCLUSIVE_BUFFERS', # removes a feature
     'MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG', # behavior change + build dependency
     'MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER', # incompatible with USE_PSA_CRYPTO
     'MBEDTLS_PSA_CRYPTO_SPM', # platform dependency (PSA SPM)
     'MBEDTLS_PSA_INJECT_ENTROPY', # conflicts with platform entropy sources
     'MBEDTLS_RSA_NO_CRT', # influences the use of RSA in X.509 and TLS
     'MBEDTLS_SHA256_USE_A64_CRYPTO_ONLY', # interacts with *_USE_A64_CRYPTO_IF_PRESENT
+    'MBEDTLS_SHA256_USE_ARMV8_A_CRYPTO_ONLY', # interacts with *_USE_ARMV8_A_CRYPTO_IF_PRESENT
     'MBEDTLS_SHA512_USE_A64_CRYPTO_ONLY', # interacts with *_USE_A64_CRYPTO_IF_PRESENT
-    'MBEDTLS_SSL_RECORD_SIZE_LIMIT', # in development, currently breaks other tests
+    'MBEDTLS_SHA256_USE_A64_CRYPTO_IF_PRESENT', # setting *_USE_ARMV8_A_CRYPTO is sufficient
     'MBEDTLS_TEST_CONSTANT_FLOW_MEMSAN', # build dependency (clang+memsan)
     'MBEDTLS_TEST_CONSTANT_FLOW_VALGRIND', # build dependency (valgrind headers)
     'MBEDTLS_X509_REMOVE_INFO', # removes a feature
@@ -267,6 +270,9 @@ EXCLUDE_FROM_BAREMETAL = frozenset([
     'MBEDTLS_THREADING_C', # requires a threading interface
     'MBEDTLS_THREADING_PTHREAD', # requires pthread
     'MBEDTLS_TIMING_C', # requires a clock
+    'MBEDTLS_SHA256_USE_A64_CRYPTO_IF_PRESENT', # requires an OS for runtime-detection
+    'MBEDTLS_SHA256_USE_ARMV8_A_CRYPTO_IF_PRESENT', # requires an OS for runtime-detection
+    'MBEDTLS_SHA512_USE_A64_CRYPTO_IF_PRESENT', # requires an OS for runtime-detection
 ])
 
 def keep_in_baremetal(name):
@@ -347,6 +353,22 @@ def no_deprecated_adapter(adapter):
         return adapter(name, active, section)
     return continuation
 
+def no_platform_adapter(adapter):
+    """Modify an adapter to disable platform symbols.
+
+    ``no_platform_adapter(adapter)(name, active, section)`` is like
+    ``adapter(name, active, section)``, but unsets all platform symbols other
+    ``than MBEDTLS_PLATFORM_C.
+    """
+    def continuation(name, active, section):
+        # Allow MBEDTLS_PLATFORM_C but remove all other platform symbols.
+        if name.startswith('MBEDTLS_PLATFORM_') and name != 'MBEDTLS_PLATFORM_C':
+            return False
+        if adapter is None:
+            return active
+        return adapter(name, active, section)
+    return continuation
+
 class ConfigFile(Config):
     """Representation of the Mbed TLS configuration read for a file.
 
@@ -374,6 +396,7 @@ class ConfigFile(Config):
                                 self.default_path)
         super().__init__()
         self.filename = filename
+        self.inclusion_guard = None
         self.current_section = 'header'
         with open(filename, 'r', encoding='utf-8') as file:
             self.templates = [self._parse_line(line) for line in file]
@@ -391,9 +414,11 @@ class ConfigFile(Config):
                            r'(?P<arguments>(?:\((?:\w|\s|,)*\))?)' +
                            r'(?P<separator>\s*)' +
                            r'(?P<value>.*)')
+    _ifndef_line_regexp = r'#ifndef (?P<inclusion_guard>\w+)'
     _section_line_regexp = (r'\s*/?\*+\s*[\\@]name\s+SECTION:\s*' +
                             r'(?P<section>.*)[ */]*')
     _config_line_regexp = re.compile(r'|'.join([_define_line_regexp,
+                                                _ifndef_line_regexp,
                                                 _section_line_regexp]))
     def _parse_line(self, line):
         """Parse a line in mbedtls_config.h and return the corresponding template."""
@@ -404,10 +429,16 @@ class ConfigFile(Config):
         elif m.group('section'):
             self.current_section = m.group('section')
             return line
+        elif m.group('inclusion_guard') and self.inclusion_guard is None:
+            self.inclusion_guard = m.group('inclusion_guard')
+            return line
         else:
             active = not m.group('commented_out')
             name = m.group('name')
             value = m.group('value')
+            if name == self.inclusion_guard and value == '':
+                # The file double-inclusion guard is not an option.
+                return line
             template = (name,
                         m.group('indentation'),
                         m.group('define') + name +
@@ -528,6 +559,10 @@ if __name__ == '__main__':
         add_adapter('full_no_deprecated', no_deprecated_adapter(full_adapter),
                     """Uncomment most non-deprecated features.
                     Like "full", but without deprecated features.
+                    """)
+        add_adapter('full_no_platform', no_platform_adapter(full_adapter),
+                    """Uncomment most non-platform features.
+                    Like "full", but without platform features.
                     """)
         add_adapter('realfull', realfull_adapter,
                     """Uncomment all boolean #defines.

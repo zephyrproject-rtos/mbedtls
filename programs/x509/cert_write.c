@@ -15,7 +15,7 @@
     !defined(MBEDTLS_X509_CRT_PARSE_C) || !defined(MBEDTLS_FS_IO) || \
     !defined(MBEDTLS_ENTROPY_C) || !defined(MBEDTLS_CTR_DRBG_C) || \
     !defined(MBEDTLS_ERROR_C) || !defined(MBEDTLS_MD_CAN_SHA256) || \
-    !defined(MBEDTLS_PEM_WRITE_C)
+    !defined(MBEDTLS_PEM_WRITE_C) || !defined(MBEDTLS_MD_C)
 int main(void)
 {
     mbedtls_printf("MBEDTLS_X509_CRT_WRITE_C and/or MBEDTLS_X509_CRT_PARSE_C and/or "
@@ -204,9 +204,9 @@ struct options {
     int format;                 /* format                               */
 } opt;
 
-int write_certificate(mbedtls_x509write_cert *crt, const char *output_file,
-                      int (*f_rng)(void *, unsigned char *, size_t),
-                      void *p_rng)
+static int write_certificate(mbedtls_x509write_cert *crt, const char *output_file,
+                             int (*f_rng)(void *, unsigned char *, size_t),
+                             void *p_rng)
 {
     int ret;
     FILE *f;
@@ -249,8 +249,8 @@ int write_certificate(mbedtls_x509write_cert *crt, const char *output_file,
     return 0;
 }
 
-int parse_serial_decimal_format(unsigned char *obuf, size_t obufmax,
-                                const char *ibuf, size_t *len)
+static int parse_serial_decimal_format(unsigned char *obuf, size_t obufmax,
+                                       const char *ibuf, size_t *len)
 {
     unsigned long long int dec;
     unsigned int remaining_bytes = sizeof(dec);
@@ -571,6 +571,10 @@ usage:
 
                 if ((subtype_value = strchr(q, ':')) != NULL) {
                     *subtype_value++ = '\0';
+                } else {
+                    mbedtls_printf(
+                        "Invalid argument for option SAN: Entry must be of the form TYPE:value\n");
+                    goto usage;
                 }
                 if (strcmp(q, "RFC822") == 0) {
                     cur->node.type = MBEDTLS_X509_SAN_RFC822_NAME;
@@ -579,10 +583,10 @@ usage:
                 } else if (strcmp(q, "DNS") == 0) {
                     cur->node.type = MBEDTLS_X509_SAN_DNS_NAME;
                 } else if (strcmp(q, "IP") == 0) {
-                    size_t ip_len = 0;
+                    size_t ip_addr_len = 0;
                     cur->node.type = MBEDTLS_X509_SAN_IP_ADDRESS;
-                    ip_len = mbedtls_x509_crt_parse_cn_inet_pton(subtype_value, ip);
-                    if (ip_len == 0) {
+                    ip_addr_len = mbedtls_x509_crt_parse_cn_inet_pton(subtype_value, ip);
+                    if (ip_addr_len == 0) {
                         mbedtls_printf("mbedtls_x509_crt_parse_cn_inet_pton failed to parse %s\n",
                                        subtype_value);
                         goto exit;

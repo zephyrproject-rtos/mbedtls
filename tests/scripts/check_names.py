@@ -45,7 +45,7 @@ import subprocess
 import logging
 
 import scripts_path # pylint: disable=unused-import
-from mbedtls_dev import build_tree
+from mbedtls_framework import build_tree
 
 
 # Naming patterns to check against. These are defined outside the NameCheck
@@ -929,7 +929,7 @@ def main():
             "This script confirms that the naming of all symbols and identifiers "
             "in Mbed TLS are consistent with the house style and are also "
             "self-consistent.\n\n"
-            "Expected to be run from the MbedTLS root directory.")
+            "Expected to be run from the Mbed TLS root directory.")
     )
     parser.add_argument(
         "-v", "--verbose",

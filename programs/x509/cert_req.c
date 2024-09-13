@@ -14,7 +14,8 @@
 #if !defined(MBEDTLS_X509_CSR_WRITE_C) || !defined(MBEDTLS_X509_CRT_PARSE_C) || \
     !defined(MBEDTLS_PK_PARSE_C) || !defined(MBEDTLS_MD_CAN_SHA256) || \
     !defined(MBEDTLS_ENTROPY_C) || !defined(MBEDTLS_CTR_DRBG_C) || \
-    !defined(MBEDTLS_PEM_WRITE_C) || !defined(MBEDTLS_FS_IO)
+    !defined(MBEDTLS_PEM_WRITE_C) || !defined(MBEDTLS_FS_IO) || \
+    !defined(MBEDTLS_MD_C)
 int main(void)
 {
     mbedtls_printf("MBEDTLS_X509_CSR_WRITE_C and/or MBEDTLS_FS_IO and/or "
@@ -93,22 +94,22 @@ int main(void)
  * global options
  */
 struct options {
-    const char *filename;             /* filename of the key file             */
-    const char *password;             /* password for the key file            */
-    int debug_level;                  /* level of debugging                   */
+    const char *filename;             /* filename of the key file                 */
+    const char *password;             /* password for the key file                */
+    int debug_level;                  /* level of debugging                       */
     const char *output_file;          /* where to store the constructed key file  */
-    const char *subject_name;         /* subject name for certificate request   */
-    mbedtls_x509_san_list *san_list;  /* subjectAltName for certificate request */
-    unsigned char key_usage;          /* key usage flags                      */
-    int force_key_usage;              /* Force adding the KeyUsage extension  */
-    unsigned char ns_cert_type;       /* NS cert type                         */
-    int force_ns_cert_type;           /* Force adding NsCertType extension    */
-    mbedtls_md_type_t md_alg;         /* Hash algorithm used for signature.   */
+    const char *subject_name;         /* subject name for certificate request     */
+    mbedtls_x509_san_list *san_list;  /* subjectAltName for certificate request   */
+    unsigned char key_usage;          /* key usage flags                          */
+    int force_key_usage;              /* Force adding the KeyUsage extension      */
+    unsigned char ns_cert_type;       /* NS cert type                             */
+    int force_ns_cert_type;           /* Force adding NsCertType extension        */
+    mbedtls_md_type_t md_alg;         /* Hash algorithm used for signature.       */
 } opt;
 
-int write_certificate_request(mbedtls_x509write_csr *req, const char *output_file,
-                              int (*f_rng)(void *, unsigned char *, size_t),
-                              void *p_rng)
+static int write_certificate_request(mbedtls_x509write_csr *req, const char *output_file,
+                                     int (*f_rng)(void *, unsigned char *, size_t),
+                                     void *p_rng)
 {
     int ret;
     FILE *f;
@@ -249,6 +250,10 @@ usage:
 
                 if ((subtype_value = strchr(q, ':')) != NULL) {
                     *subtype_value++ = '\0';
+                } else {
+                    mbedtls_printf(
+                        "Invalid argument for option SAN: Entry must be of the form TYPE:value\n");
+                    goto usage;
                 }
                 if (strcmp(q, "RFC822") == 0) {
                     cur->node.type = MBEDTLS_X509_SAN_RFC822_NAME;
@@ -257,10 +262,10 @@ usage:
                 } else if (strcmp(q, "DNS") == 0) {
                     cur->node.type = MBEDTLS_X509_SAN_DNS_NAME;
                 } else if (strcmp(q, "IP") == 0) {
-                    size_t ip_len = 0;
+                    size_t ip_addr_len = 0;
                     cur->node.type = MBEDTLS_X509_SAN_IP_ADDRESS;
-                    ip_len = mbedtls_x509_crt_parse_cn_inet_pton(subtype_value, ip);
-                    if (ip_len == 0) {
+                    ip_addr_len = mbedtls_x509_crt_parse_cn_inet_pton(subtype_value, ip);
+                    if (ip_addr_len == 0) {
                         mbedtls_printf("mbedtls_x509_crt_parse_cn_inet_pton failed to parse %s\n",
                                        subtype_value);
                         goto exit;

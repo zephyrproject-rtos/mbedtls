@@ -20,18 +20,18 @@ from collections import namedtuple
 Certificate = namedtuple("Certificate", ['cafile', 'certfile', 'keyfile'])
 # define the certificate parameters for signature algorithms
 CERTIFICATES = {
-    'ecdsa_secp256r1_sha256': Certificate('data_files/test-ca2.crt',
-                                          'data_files/ecdsa_secp256r1.crt',
-                                          'data_files/ecdsa_secp256r1.key'),
-    'ecdsa_secp384r1_sha384': Certificate('data_files/test-ca2.crt',
-                                          'data_files/ecdsa_secp384r1.crt',
-                                          'data_files/ecdsa_secp384r1.key'),
-    'ecdsa_secp521r1_sha512': Certificate('data_files/test-ca2.crt',
-                                          'data_files/ecdsa_secp521r1.crt',
-                                          'data_files/ecdsa_secp521r1.key'),
-    'rsa_pss_rsae_sha256': Certificate('data_files/test-ca_cat12.crt',
-                                       'data_files/server2-sha256.crt', 'data_files/server2.key'
-                                       )
+    'ecdsa_secp256r1_sha256': Certificate('$DATA_FILES_PATH/test-ca2.crt',
+                                          '$DATA_FILES_PATH/ecdsa_secp256r1.crt',
+                                          '$DATA_FILES_PATH/ecdsa_secp256r1.key'),
+    'ecdsa_secp384r1_sha384': Certificate('$DATA_FILES_PATH/test-ca2.crt',
+                                          '$DATA_FILES_PATH/ecdsa_secp384r1.crt',
+                                          '$DATA_FILES_PATH/ecdsa_secp384r1.key'),
+    'ecdsa_secp521r1_sha512': Certificate('$DATA_FILES_PATH/test-ca2.crt',
+                                          '$DATA_FILES_PATH/ecdsa_secp521r1.crt',
+                                          '$DATA_FILES_PATH/ecdsa_secp521r1.key'),
+    'rsa_pss_rsae_sha256': Certificate('$DATA_FILES_PATH/test-ca_cat12.crt',
+                                       '$DATA_FILES_PATH/server2-sha256.crt',
+                                       '$DATA_FILES_PATH/server2.key')
 }
 
 CIPHER_SUITE_IANA_VALUE = {
@@ -353,6 +353,19 @@ class MbedTLSBase(TLSProgram):
             ret += ["groups={named_groups}".format(named_groups=named_groups)]
         return ret
 
+    #pylint: disable=missing-function-docstring
+    def add_ffdh_group_requirements(self, requirement_list):
+        if 'ffdhe2048' in self._named_groups:
+            requirement_list.append('requires_config_enabled PSA_WANT_DH_RFC7919_2048')
+        if 'ffdhe3072' in self._named_groups:
+            requirement_list.append('requires_config_enabled PSA_WANT_DH_RFC7919_2048')
+        if 'ffdhe4096' in self._named_groups:
+            requirement_list.append('requires_config_enabled PSA_WANT_DH_RFC7919_2048')
+        if 'ffdhe6144' in self._named_groups:
+            requirement_list.append('requires_config_enabled PSA_WANT_DH_RFC7919_2048')
+        if 'ffdhe8192' in self._named_groups:
+            requirement_list.append('requires_config_enabled PSA_WANT_DH_RFC7919_2048')
+
     def pre_checks(self):
         ret = ['requires_config_enabled MBEDTLS_DEBUG_C',
                'requires_config_enabled MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_EPHEMERAL_ENABLED']
@@ -365,13 +378,14 @@ class MbedTLSBase(TLSProgram):
                 'requires_config_enabled MBEDTLS_X509_RSASSA_PSS_SUPPORT')
 
         ec_groups = ['secp256r1', 'secp384r1', 'secp521r1', 'x25519', 'x448']
-        ffdh_groups = ['ffdhe2048']
+        ffdh_groups = ['ffdhe2048', 'ffdhe3072', 'ffdhe4096', 'ffdhe6144', 'ffdhe8192']
 
         if any(x in ec_groups for x in self._named_groups):
             ret.append('requires_config_enabled PSA_WANT_ALG_ECDH')
 
         if any(x in ffdh_groups for x in self._named_groups):
             ret.append('requires_config_enabled PSA_WANT_ALG_FFDH')
+            self.add_ffdh_group_requirements(ret)
 
         return ret
 
@@ -535,6 +549,9 @@ SSL_OUTPUT_HEADER = '''#!/bin/sh
 # AND REGENERATE THIS FILE.
 #
 '''
+DATA_FILES_PATH_VAR = '''
+DATA_FILES_PATH=../framework/data_files
+'''
 
 def main():
     """
@@ -614,6 +631,7 @@ def main():
             with open(args.output, 'w', encoding="utf-8") as f:
                 f.write(SSL_OUTPUT_HEADER.format(
                     filename=os.path.basename(args.output), cmd=' '.join(sys.argv)))
+                f.write(DATA_FILES_PATH_VAR)
                 f.write('\n\n'.join(get_all_test_cases()))
                 f.write('\n')
         else:

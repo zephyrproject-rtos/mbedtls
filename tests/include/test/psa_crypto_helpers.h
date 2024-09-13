@@ -16,9 +16,7 @@
 #include <psa/crypto.h>
 #endif
 
-#if defined(MBEDTLS_MD_LIGHT)
-#include "mbedtls/md.h"
-#endif
+#include <mbedtls/ctr_drbg.h>
 
 #if defined(MBEDTLS_PSA_CRYPTO_C)
 /** Initialize the PSA Crypto subsystem. */
@@ -336,8 +334,17 @@ uint64_t mbedtls_test_parse_binary_string(data_t *bin_string);
  * This is like #PSA_DONE except it does nothing under the same conditions as
  * #USE_PSA_INIT.
  */
-#if defined(MBEDTLS_USE_PSA_CRYPTO) || defined(MBEDTLS_SSL_PROTO_TLS1_3)
+#if defined(MBEDTLS_USE_PSA_CRYPTO)
 #define USE_PSA_INIT() PSA_INIT()
+#define USE_PSA_DONE() PSA_DONE()
+#elif defined(MBEDTLS_SSL_PROTO_TLS1_3)
+/* TLS 1.3 must work without having called psa_crypto_init(), for backward
+ * compatibility with Mbed TLS <= 3.5 when connecting with a peer that
+ * supports both TLS 1.2 and TLS 1.3. See mbedtls_ssl_tls13_crypto_init()
+ * and https://github.com/Mbed-TLS/mbedtls/issues/9072 . */
+#define USE_PSA_INIT() ((void) 0)
+/* TLS 1.3 may have initialized the PSA subsystem. Shut it down cleanly,
+ * otherwise Asan and Valgrind would notice a resource leak. */
 #define USE_PSA_DONE() PSA_DONE()
 #else /* MBEDTLS_USE_PSA_CRYPTO || MBEDTLS_SSL_PROTO_TLS1_3 */
 /* Define empty macros so that we can use them in the preamble and teardown
@@ -370,6 +377,30 @@ uint64_t mbedtls_test_parse_binary_string(data_t *bin_string);
 #define MD_PSA_DONE() ((void) 0)
 #endif /* MBEDTLS_MD_SOME_PSA */
 
+/** \def BLOCK_CIPHER_PSA_INIT
+ *
+ * Call this macro to initialize the PSA subsystem if BLOCK_CIPHER uses a driver,
+ * and do nothing otherwise.
+ *
+ * If the initialization fails, mark the test case as failed and jump to the
+ * \p exit label.
+ */
+/** \def BLOCK_CIPHER_PSA_DONE
+ *
+ * Call this macro at the end of a test case if you called #BLOCK_CIPHER_PSA_INIT.
+ *
+ * This is like #PSA_DONE except it does nothing under the same conditions as
+ * #BLOCK_CIPHER_PSA_INIT.
+ */
+#if defined(MBEDTLS_BLOCK_CIPHER_SOME_PSA)
+#define BLOCK_CIPHER_PSA_INIT()   PSA_INIT()
+#define BLOCK_CIPHER_PSA_DONE()   PSA_DONE()
+#else /* MBEDTLS_MD_SOME_PSA */
+#define BLOCK_CIPHER_PSA_INIT() ((void) 0)
+#define BLOCK_CIPHER_PSA_DONE() ((void) 0)
+#endif /* MBEDTLS_MD_SOME_PSA */
+
+
 /** \def MD_OR_USE_PSA_INIT
  *
  * Call this macro to initialize the PSA subsystem if MD uses a driver,
@@ -386,13 +417,55 @@ uint64_t mbedtls_test_parse_binary_string(data_t *bin_string);
  * This is like #PSA_DONE except it does nothing under the same conditions as
  * #MD_OR_USE_PSA_INIT.
  */
-#if defined(MBEDTLS_MD_SOME_PSA) || \
-    defined(MBEDTLS_USE_PSA_CRYPTO) || defined(MBEDTLS_SSL_PROTO_TLS1_3)
+#if defined(MBEDTLS_MD_SOME_PSA)
 #define MD_OR_USE_PSA_INIT()   PSA_INIT()
 #define MD_OR_USE_PSA_DONE()   PSA_DONE()
 #else
-#define MD_OR_USE_PSA_INIT() ((void) 0)
-#define MD_OR_USE_PSA_DONE() ((void) 0)
+#define MD_OR_USE_PSA_INIT()   USE_PSA_INIT()
+#define MD_OR_USE_PSA_DONE()   USE_PSA_DONE()
 #endif
+
+/** \def AES_PSA_INIT
+ *
+ * Call this macro to initialize the PSA subsystem if AES_C is not defined,
+ * so that CTR_DRBG uses PSA implementation to get AES-ECB.
+ *
+ * If the initialization fails, mark the test case as failed and jump to the
+ * \p exit label.
+ */
+/** \def AES_PSA_DONE
+ *
+ * Call this macro at the end of a test case if you called #AES_PSA_INIT.
+ *
+ * This is like #PSA_DONE except it does nothing under the same conditions as
+ * #AES_PSA_INIT.
+ */
+#if defined(MBEDTLS_CTR_DRBG_USE_PSA_CRYPTO)
+#define AES_PSA_INIT()   PSA_INIT()
+#define AES_PSA_DONE()   PSA_DONE()
+#else /* MBEDTLS_CTR_DRBG_USE_PSA_CRYPTO */
+#define AES_PSA_INIT() ((void) 0)
+#define AES_PSA_DONE() ((void) 0)
+#endif /* MBEDTLS_CTR_DRBG_USE_PSA_CRYPTO */
+
+#if !defined(MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG) &&                        \
+    defined(MBEDTLS_CTR_DRBG_C) &&                                      \
+    defined(MBEDTLS_CTR_DRBG_USE_PSA_CRYPTO)
+/* When AES_C is not defined and PSA does not have an external RNG,
+ * then CTR_DRBG uses PSA to perform AES-ECB. In this scenario 1 key
+ * slot is used internally from PSA to hold the AES key and it should
+ * not be taken into account when evaluating remaining open slots. */
+#define MBEDTLS_TEST_PSA_INTERNAL_KEYS_FOR_DRBG 1
+#else
+#define MBEDTLS_TEST_PSA_INTERNAL_KEYS_FOR_DRBG 0
+#endif
+
+/** The number of volatile keys that PSA crypto uses internally.
+ *
+ * We expect that many volatile keys to be in use after a successful
+ * psa_crypto_init().
+ */
+#define MBEDTLS_TEST_PSA_INTERNAL_KEYS          \
+    MBEDTLS_TEST_PSA_INTERNAL_KEYS_FOR_DRBG
 
 #endif /* PSA_CRYPTO_HELPERS_H */

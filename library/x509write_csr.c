@@ -14,7 +14,7 @@
 
 #if defined(MBEDTLS_X509_CSR_WRITE_C)
 
-#include "mbedtls/x509.h"
+#include "x509_internal.h"
 #include "mbedtls/x509_csr.h"
 #include "mbedtls/asn1write.h"
 #include "mbedtls/error.h"
@@ -24,7 +24,7 @@
 #if defined(MBEDTLS_USE_PSA_CRYPTO)
 #include "psa/crypto.h"
 #include "psa_util_internal.h"
-#include "md_psa.h"
+#include "mbedtls/psa_util.h"
 #endif /* MBEDTLS_USE_PSA_CRYPTO */
 
 #include <string.h>
@@ -43,6 +43,10 @@ void mbedtls_x509write_csr_init(mbedtls_x509write_csr *ctx)
 
 void mbedtls_x509write_csr_free(mbedtls_x509write_csr *ctx)
 {
+    if (ctx == NULL) {
+        return;
+    }
+
     mbedtls_asn1_free_named_data_list(&ctx->subject);
     mbedtls_asn1_free_named_data_list(&ctx->extensions);
 
@@ -185,7 +189,7 @@ static int x509write_csr_der_internal(mbedtls_x509write_csr *ctx,
                              MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_CONTEXT_SPECIFIC));
 
     MBEDTLS_ASN1_CHK_ADD(pub_len, mbedtls_pk_write_pubkey_der(ctx->key,
-                                                              buf, c - buf));
+                                                              buf, (size_t) (c - buf)));
     c -= pub_len;
     len += pub_len;
 
@@ -276,7 +280,7 @@ static int x509write_csr_der_internal(mbedtls_x509write_csr *ctx,
                              MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_SEQUENCE));
 
     /* Zero the unused bytes at the start of buf */
-    memset(buf, 0, c2 - buf);
+    memset(buf, 0, (size_t) (c2 - buf));
 
     return (int) len;
 }
