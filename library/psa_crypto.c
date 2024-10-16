@@ -8341,12 +8341,12 @@ psa_status_t psa_crypto_init(void)
         return PSA_SUCCESS;
     }
 
-    status = mbedtls_psa_crypto_init_subsystem(PSA_CRYPTO_SUBSYSTEM_KEY_SLOTS);
+    status = mbedtls_psa_crypto_init_subsystem(PSA_CRYPTO_SUBSYSTEM_DRIVER_WRAPPERS);
     if (status != PSA_SUCCESS) {
         goto exit;
     }
 
-    status = mbedtls_psa_crypto_init_subsystem(PSA_CRYPTO_SUBSYSTEM_DRIVER_WRAPPERS);
+    status = mbedtls_psa_crypto_init_subsystem(PSA_CRYPTO_SUBSYSTEM_KEY_SLOTS);
     if (status != PSA_SUCCESS) {
         goto exit;
     }
