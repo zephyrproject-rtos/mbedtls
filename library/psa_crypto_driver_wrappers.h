@@ -23,7 +23,7 @@
 #include "mbedtls/constant_time.h"
 /* END-common headers */
 
-#if defined(MBEDTLS_PSA_CRYPTO_C) || defined(MCUBOOT_USE_PSA_CRYPTO)
+#if defined(MBEDTLS_PSA_CRYPTO_C)
 
 /* BEGIN-driver headers */
 /* Headers for mbedtls_test opaque driver */
