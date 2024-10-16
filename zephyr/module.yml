@@ -3,5 +3,5 @@ build:
   kconfig-ext: True
 security:
   external-references:
-    - cpe:2.3:a:arm:mbed_tls:3.6.1:*:*:*:*:*:*:*
-    - pkg:github/Mbed-TLS/mbedtls@V3.6.1
+    - cpe:2.3:a:arm:mbed_tls:3.6.2:*:*:*:*:*:*:*
+    - pkg:github/Mbed-TLS/mbedtls@V3.6.2
