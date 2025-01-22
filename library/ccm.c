@@ -14,7 +14,7 @@
  * RFC 5116 "An Interface and Algorithms for Authenticated Encryption"
  */
 
-#include "common.h"
+#include "mbedcrypto_common.h"
 
 #if defined(MBEDTLS_CCM_C)
 

@@ -26,7 +26,7 @@
 #define MBEDTLS_ENABLE_ARM_SHA3_EXTENSIONS_COMPILER_FLAG
 #endif
 
-#include "common.h"
+#include "mbedcrypto_common.h"
 
 #if defined(MBEDTLS_SHA512_C) || defined(MBEDTLS_SHA384_C)
 

@@ -7,7 +7,7 @@
 
 #include <limits.h>
 
-#include "common.h"
+#include "mbedcrypto_common.h"
 
 #if defined(MBEDTLS_BASE64_C)
 

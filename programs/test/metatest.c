@@ -34,7 +34,7 @@
 #include "test/threading_helpers.h"
 #include "test/macros.h"
 #include "test/memory.h"
-#include "common.h"
+#include "mbedcrypto_common.h"
 
 #include <stdio.h>
 #include <string.h>

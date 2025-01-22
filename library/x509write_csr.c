@@ -10,7 +10,7 @@
  * - attributes: PKCS#9 v2.0 aka RFC 2985
  */
 
-#include "common.h"
+#include "mbedcrypto_common.h"
 
 #if defined(MBEDTLS_X509_CSR_WRITE_C)
 

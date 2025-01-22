@@ -11,7 +11,7 @@
 #ifndef MBEDTLS_BASE64_INTERNAL
 #define MBEDTLS_BASE64_INTERNAL
 
-#include "common.h"
+#include "mbedcrypto_common.h"
 
 #if defined(MBEDTLS_TEST_HOOKS)
 

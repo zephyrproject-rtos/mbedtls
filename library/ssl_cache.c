@@ -9,7 +9,7 @@
  * to store and retrieve the session information.
  */
 
-#include "common.h"
+#include "mbedcrypto_common.h"
 
 #if defined(MBEDTLS_SSL_CACHE_C)
 

@@ -48,7 +48,7 @@
 #define _GNU_SOURCE
 #endif
 
-#include "common.h"
+#include "mbedcrypto_common.h"
 
 #if defined(MBEDTLS_SHA256_C) || defined(MBEDTLS_SHA224_C)
 

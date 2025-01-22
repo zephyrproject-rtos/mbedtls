@@ -10,7 +10,7 @@
  * available to members of the Thread Group http://threadgroup.org/
  */
 
-#include "common.h"
+#include "mbedcrypto_common.h"
 
 #if defined(MBEDTLS_ECJPAKE_C)
 

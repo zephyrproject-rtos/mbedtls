@@ -8,7 +8,7 @@
 #ifndef MBEDTLS_SSL_CLIENT_H
 #define MBEDTLS_SSL_CLIENT_H
 
-#include "common.h"
+#include "mbedcrypto_common.h"
 
 #if defined(MBEDTLS_SSL_TLS_C)
 #include "ssl_misc.h"

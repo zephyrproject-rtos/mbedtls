@@ -11,7 +11,7 @@
  *
  */
 
-#include "common.h"
+#include "mbedcrypto_common.h"
 
 #if defined(MBEDTLS_DEBUG_C)
 
@@ -248,4 +248,3 @@ const char *mbedtls_ssl_key_export_type_str( mbedtls_ssl_key_export_type in )
 
 #endif /* MBEDTLS_DEBUG_C */
 /* End of automatically generated file. */
-

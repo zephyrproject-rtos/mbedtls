@@ -11,7 +11,7 @@
 #ifndef MBEDTLS_SSL_DEBUG_HELPERS_H
 #define MBEDTLS_SSL_DEBUG_HELPERS_H
 
-#include "common.h"
+#include "mbedcrypto_common.h"
 
 #if defined(MBEDTLS_DEBUG_C)
 

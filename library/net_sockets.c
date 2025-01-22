@@ -15,7 +15,7 @@
 #define _XOPEN_SOURCE 600 /* sockaddr_storage */
 #endif
 
-#include "common.h"
+#include "mbedcrypto_common.h"
 
 #if defined(MBEDTLS_NET_C)
 

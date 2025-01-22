@@ -6,7 +6,7 @@
  *
  */
 
-#include "common.h"
+#include "mbedcrypto_common.h"
 
 #if defined(MBEDTLS_RSA_C)
 

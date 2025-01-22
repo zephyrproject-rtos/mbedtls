@@ -15,7 +15,7 @@
  * the wrapping and unwrapping operation than the definition in NIST SP 800-38F.
  */
 
-#include "common.h"
+#include "mbedcrypto_common.h"
 
 #if defined(MBEDTLS_NIST_KW_C)
 

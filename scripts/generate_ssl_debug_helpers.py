@@ -350,7 +350,7 @@ OUTPUT_C_TEMPLATE = '''\
  *
  */
 
-#include "common.h"
+#include "mbedcrypto_common.h"
 
 #if defined(MBEDTLS_DEBUG_C)
 

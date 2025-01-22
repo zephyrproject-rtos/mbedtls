@@ -29,7 +29,7 @@
  *     <http://eprint.iacr.org/2004/342.pdf>
  */
 
-#include "common.h"
+#include "mbedcrypto_common.h"
 
 /**
  * \brief Function level alternative implementation.

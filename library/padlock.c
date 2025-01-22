@@ -11,7 +11,7 @@
  *  programming_guide.pdf
  */
 
-#include "common.h"
+#include "mbedcrypto_common.h"
 
 #if defined(MBEDTLS_PADLOCK_C)
 

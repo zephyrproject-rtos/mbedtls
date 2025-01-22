@@ -39,7 +39,7 @@
 #endif /* defined(__clang__) &&  (__clang_major__ >= 4) */
 
 #include <string.h>
-#include "common.h"
+#include "mbedcrypto_common.h"
 
 #if defined(MBEDTLS_AESCE_C)
 

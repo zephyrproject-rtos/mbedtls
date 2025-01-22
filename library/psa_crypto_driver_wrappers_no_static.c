@@ -9,7 +9,7 @@
 
 
 /* BEGIN-common headers */
-#include "common.h"
+#include "mbedcrypto_common.h"
 #include "psa_crypto_aead.h"
 #include "psa_crypto_cipher.h"
 #include "psa_crypto_core.h"

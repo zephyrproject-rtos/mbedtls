@@ -12,7 +12,7 @@
 #endif
 #endif
 
-#include "common.h"
+#include "mbedcrypto_common.h"
 
 #include <string.h>
 

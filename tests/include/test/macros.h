@@ -21,7 +21,7 @@
 #if defined(MBEDTLS_MEMORY_BUFFER_ALLOC_C)
 #include "mbedtls/memory_buffer_alloc.h"
 #endif
-#include "common.h"
+#include "mbedcrypto_common.h"
 
 /**
  * \brief   This macro tests the expression passed to it as a test step or

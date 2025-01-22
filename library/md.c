@@ -9,7 +9,7 @@
  *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
 
-#include "common.h"
+#include "mbedcrypto_common.h"
 
 /*
  * Availability of functions in this module is controlled by two

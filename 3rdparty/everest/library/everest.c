@@ -19,7 +19,7 @@
  *  This file is part of Mbed TLS (https://tls.mbed.org).
  */
 
-#include "common.h"
+#include "mbedcrypto_common.h"
 
 #include <string.h>
 
@@ -99,4 +99,3 @@ int mbedtls_everest_calc_secret( mbedtls_ecdh_context_everest *ctx, size_t *olen
 }
 
 #endif /* MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED */
-

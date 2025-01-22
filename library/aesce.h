@@ -15,7 +15,7 @@
 #define MBEDTLS_AESCE_H
 
 #include "mbedtls/build_info.h"
-#include "common.h"
+#include "mbedcrypto_common.h"
 
 #include "mbedtls/aes.h"
 

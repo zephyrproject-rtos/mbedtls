@@ -6,7 +6,7 @@
  *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
 
-#include "common.h"
+#include "mbedcrypto_common.h"
 
 /* This is needed for MBEDTLS_ERR_XXX macros */
 #include <mbedtls/error.h>

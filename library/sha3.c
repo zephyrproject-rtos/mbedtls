@@ -10,7 +10,7 @@
  *  https://nvlpubs.nist.gov/nistpubs/fips/nist.fips.202.pdf
  */
 
-#include "common.h"
+#include "mbedcrypto_common.h"
 
 #if defined(MBEDTLS_SHA3_C)
 
