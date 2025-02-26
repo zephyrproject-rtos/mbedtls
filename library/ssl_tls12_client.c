@@ -2764,7 +2764,7 @@ static int ssl_write_client_key_exchange(mbedtls_ssl_context *ssl)
 
         header_len = 4;
 
-        MBEDTLS_SSL_DEBUG_MSG(1, ("Perform PSA-based ECDH computation."));
+        MBEDTLS_SSL_DEBUG_MSG(3, ("Perform PSA-based ECDH computation."));
 
         /*
          * Generate EC private key for ECDHE exchange.
