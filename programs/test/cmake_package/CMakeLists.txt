@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.20.0)
 
 #
 # Simulate configuring and building Mbed TLS as the user might do it. We'll
