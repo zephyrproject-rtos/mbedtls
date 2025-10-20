@@ -59,3 +59,35 @@ This is for local patches that are not expected to make their way upstream.
 This should be used sparingly and for good reasons, as we do not want to deviate from upstream. This is not meant as a quick way to get changes into this repository by bypassing upstream and such commits will be rejected.
 
 `noup` commits are like regular commits in the main Zephyr repository with the exception that their commit title is prepended with `[zep noup]`.
+
+Version bumping
+---------------
+
+This section talks about Mbed TLS, but the same guidelines apply to the other
+forks of the TF-M and Mbed TLS projects.
+
+Let's say that a new Mbed TLS release is announced and that its version is `3.6.5`.
+On the Zephyr fork:
+1. Create a new branch named `zephyr_<project_name>_v<upstream_release_version>`
+   which is located exactly at the upstream release tag. For example,
+   `zephyr_mbedtls_v3.6.5`.
+2. Make a PR by cherry-picking all the Zephyr extra patches that are still needed
+   for the new branch.
+   - Discard all the `[zep fromtree]` and `[zep fromlist]` commits that are already
+      included in the release. As for `[zep noup]` they might no more be valid
+      or might require an update so they should be checked individually.
+   - The cherry-picking order should be: `[zep fromtree]` first, then
+       `[zep fromlist]` and finally `[zep noup]`.
+   - Cherry-pick commits without `-x` nor `-s` so as not to inflate the commit
+     message over time, unless you had to modify the commit and it's not just a
+     clean cherry-pick.
+3. When creating the PR set the base branch to the newly-created one. In our example,
+   it would be `zephyr_mbedtls_v3.6.5`.
+   - With this approach the PR in GitHub will only show Zephyr's extra commits
+     on top of the upstream release tag, so it will be easier to review.
+4. Get the PR in Mbed TLS fork approved and merged.
+5. Set the new branch (in our example, `zephyr_mbedtls_v3.6.5`) as the default
+   branch of the repository.
+   - When this is done, tag the HEAD of the previous default branch (which in our
+     example would be `zephyr_mbedtls_v3.6.4`) with the name same as the branch
+     (in order to keep its history) and remove that branch.
