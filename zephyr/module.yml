@@ -1,0 +1,8 @@
+name: mbedtls
+build:
+  cmake-ext: True
+  kconfig-ext: True
+security:
+  external-references:
+    - cpe:2.3:a:arm:mbed_tls:4.1.0:*:*:*:*:*:*:*
+    - pkg:github/Mbed-TLS/mbedtls@v4.1.0
