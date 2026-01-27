@@ -72,3 +72,6 @@ compile_commands.json
 
 # VScode folder to store local debug files and configurations
 .vscode
+
+/tf-psa-crypto/
+/framework/
