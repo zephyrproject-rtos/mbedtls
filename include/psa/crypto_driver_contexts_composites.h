@@ -34,6 +34,11 @@
 #include "cc3xx_crypto_primitives_private.h"
 #endif
 
+#if defined(PSA_CRYPTO_DRIVER_ESP32)
+#include "psa_crypto_driver_esp_aes_contexts.h"
+#include "psa_crypto_driver_esp_cmac_contexts.h"
+#endif /* PSA_CRYPTO_DRIVER_ESP32 */
+
 #if defined(MBEDTLS_TEST_LIBTESTDRIVER1)
 #include <libtestdriver1/include/psa/crypto.h>
 #endif
@@ -125,6 +130,9 @@ typedef union {
 #if defined(PSA_CRYPTO_DRIVER_CC3XX)
     cc3xx_mac_operation_t cc3xx_driver_ctx;
 #endif
+#if defined(PSA_CRYPTO_DRIVER_ESP32)
+    esp_cmac_operation_t esp32_driver_ctx;
+#endif
 } psa_driver_mac_context_t;
 
 typedef union {
@@ -136,6 +144,9 @@ typedef union {
 #if defined(PSA_CRYPTO_DRIVER_CC3XX)
     cc3xx_aead_operation_t cc3xx_driver_ctx;
 #endif /* PSA_CRYPTO_DRIVER_CC3XX */
+#if defined(PSA_CRYPTO_DRIVER_ESP32)
+    esp_aes_gcm_operation_t esp32_driver_ctx;
+#endif /* PSA_CRYPTO_DRIVER_ESP32 */
 } psa_driver_aead_context_t;
 
 typedef union {

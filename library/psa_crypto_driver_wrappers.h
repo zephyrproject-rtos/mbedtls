@@ -63,6 +63,19 @@
 #include "cc3xx.h"
 #endif /* PSA_CRYPTO_DRIVER_CC3XX */
 
+#if defined(PSA_CRYPTO_DRIVER_ESP32)
+#ifndef PSA_CRYPTO_DRIVER_PRESENT
+#define PSA_CRYPTO_DRIVER_PRESENT
+#endif
+#ifndef PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT
+#define PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT
+#endif
+#include "psa_crypto_driver_esp_aes.h"
+#include "psa_crypto_driver_esp_aes_gcm.h"
+#include "psa_crypto_driver_esp_sha.h"
+#include "psa_crypto_driver_esp_cmac.h"
+#endif /* PSA_CRYPTO_DRIVER_ESP32 */
+
 /* END-driver headers */
 
 /* Auto-generated values depending on which drivers are registered.
@@ -80,6 +93,9 @@ enum {
 #if defined(PSA_CRYPTO_DRIVER_CC3XX)
     PSA_CRYPTO_CC3XX_DRIVER_ID,
 #endif /* PSA_CRYPTO_DRIVER_CC3XX */
+#if defined(PSA_CRYPTO_DRIVER_ESP32)
+    PSA_CRYPTO_ESP32_DRIVER_ID,
+#endif /* PSA_CRYPTO_DRIVER_ESP32 */
 };
 
 /* END-driver id */
@@ -1244,6 +1260,21 @@ static inline psa_status_t psa_driver_wrapper_cipher_encrypt(
                                            output_length );
             return( status );
 #endif /* PSA_CRYPTO_DRIVER_CC3XX */
+#if defined(PSA_CRYPTO_DRIVER_ESP32)
+            status = esp_aes_cipher_encrypt( attributes,
+                                             key_buffer,
+                                             key_buffer_size,
+                                             alg,
+                                             iv,
+                                             iv_length,
+                                             input,
+                                             input_length,
+                                             output,
+                                             output_size,
+                                             output_length );
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_ESP32 */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
 #if defined(MBEDTLS_PSA_BUILTIN_CIPHER)
@@ -1347,6 +1378,19 @@ static inline psa_status_t psa_driver_wrapper_cipher_decrypt(
                                            output_length );
             return( status );
 #endif /* PSA_CRYPTO_DRIVER_CC3XX */
+#if defined(PSA_CRYPTO_DRIVER_ESP32)
+            status = esp_aes_cipher_decrypt( attributes,
+                                             key_buffer,
+                                             key_buffer_size,
+                                             alg,
+                                             input,
+                                             input_length,
+                                             output,
+                                             output_size,
+                                             output_length );
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_ESP32 */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
 #if defined(MBEDTLS_PSA_BUILTIN_CIPHER)
@@ -1437,6 +1481,19 @@ static inline psa_status_t psa_driver_wrapper_cipher_encrypt_setup(
             operation->id = PSA_CRYPTO_CC3XX_DRIVER_ID;
             return( status );
 #endif /* PSA_CRYPTO_DRIVER_CC3XX */
+#if defined(PSA_CRYPTO_DRIVER_ESP32)
+            status = esp_aes_cipher_encrypt_setup(
+                &operation->ctx.esp32_driver_ctx,
+                attributes,
+                key_buffer,
+                key_buffer_size,
+                alg );
+            if( status == PSA_SUCCESS )
+                operation->id = PSA_CRYPTO_ESP32_DRIVER_ID;
+
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_ESP32 */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 #if defined(MBEDTLS_PSA_BUILTIN_CIPHER)
             /* Fell through, meaning no accelerator supports this operation */
@@ -1523,6 +1580,19 @@ static inline psa_status_t psa_driver_wrapper_cipher_decrypt_setup(
             operation->id = PSA_CRYPTO_CC3XX_DRIVER_ID;
             return( status );
 #endif /* PSA_CRYPTO_DRIVER_CC3XX */
+#if defined(PSA_CRYPTO_DRIVER_ESP32)
+            status = esp_aes_cipher_decrypt_setup(
+                &operation->ctx.esp32_driver_ctx,
+                attributes,
+                key_buffer,
+                key_buffer_size,
+                alg );
+            if( status == PSA_SUCCESS )
+                operation->id = PSA_CRYPTO_ESP32_DRIVER_ID;
+
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_ESP32 */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 #if defined(MBEDTLS_PSA_BUILTIN_CIPHER)
             /* Fell through, meaning no accelerator supports this operation */
@@ -1598,6 +1668,12 @@ static inline psa_status_t psa_driver_wrapper_cipher_set_iv(
                         &operation->ctx.cc3xx_driver_ctx,
                         iv, iv_length ) );
 #endif /* PSA_CRYPTO_DRIVER_CC3XX */
+#if defined(PSA_CRYPTO_DRIVER_ESP32)
+        case PSA_CRYPTO_ESP32_DRIVER_ID:
+            return( esp_aes_cipher_set_iv(
+                        &operation->ctx.esp32_driver_ctx,
+                        iv, iv_length ) );
+#endif /* PSA_CRYPTO_DRIVER_ESP32 */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
     }
 
@@ -1648,6 +1724,13 @@ static inline psa_status_t psa_driver_wrapper_cipher_update(
                         input, input_length,
                         output, output_size, output_length ) );
 #endif /* PSA_CRYPTO_DRIVER_CC3XX */
+#if defined(PSA_CRYPTO_DRIVER_ESP32)
+        case PSA_CRYPTO_ESP32_DRIVER_ID:
+            return( esp_aes_cipher_update(
+                        &operation->ctx.esp32_driver_ctx,
+                        input, input_length,
+                        output, output_size, output_length ) );
+#endif /* PSA_CRYPTO_DRIVER_ESP32 */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
     }
 
@@ -1694,6 +1777,12 @@ static inline psa_status_t psa_driver_wrapper_cipher_finish(
                         &operation->ctx.cc3xx_driver_ctx,
                         output, output_size, output_length ) );
 #endif /* PSA_CRYPTO_DRIVER_CC3XX*/
+#if defined(PSA_CRYPTO_DRIVER_ESP32)
+        case PSA_CRYPTO_ESP32_DRIVER_ID:
+            return( esp_aes_cipher_finish(
+                        &operation->ctx.esp32_driver_ctx,
+                        output, output_size, output_length ) );
+#endif /* PSA_CRYPTO_DRIVER_ESP32 */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
     }
 
@@ -1743,6 +1832,15 @@ static inline psa_status_t psa_driver_wrapper_cipher_abort(
                 sizeof( operation->ctx.cc3xx_driver_ctx ) );
             return( status );
 #endif /* PSA_CRYPTO_DRIVER_CC3XX */
+#if defined(PSA_CRYPTO_DRIVER_ESP32)
+        case PSA_CRYPTO_ESP32_DRIVER_ID:
+            status = esp_aes_cipher_abort(
+                         &operation->ctx.esp32_driver_ctx );
+            mbedtls_platform_zeroize(
+                &operation->ctx.esp32_driver_ctx,
+                sizeof( operation->ctx.esp32_driver_ctx ) );
+            return( status );
+#endif /* PSA_CRYPTO_DRIVER_ESP32 */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
     }
 
@@ -1776,6 +1874,12 @@ static inline psa_status_t psa_driver_wrapper_hash_compute(
             hash_length);
     return status;
 #endif /* PSA_CRYPTO_DRIVER_CC3XX */
+#if defined(PSA_CRYPTO_DRIVER_ESP32)
+    status = esp_sha_hash_compute(alg, input, input_length, hash, hash_size,
+            hash_length);
+    if( status != PSA_ERROR_NOT_SUPPORTED )
+        return( status );
+#endif /* PSA_CRYPTO_DRIVER_ESP32 */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
     /* If software fallback is compiled in, try fallback */
@@ -1818,6 +1922,14 @@ static inline psa_status_t psa_driver_wrapper_hash_setup(
     operation->id = PSA_CRYPTO_CC3XX_DRIVER_ID;
     return( status );
 #endif /* PSA_CRYPTO_DRIVER_CC3XX */
+#if defined(PSA_CRYPTO_DRIVER_ESP32)
+    status = esp_sha_hash_setup(&operation->ctx.esp32_driver_ctx, alg);
+    if( status == PSA_SUCCESS )
+        operation->id = PSA_CRYPTO_ESP32_DRIVER_ID;
+
+    if( status != PSA_ERROR_NOT_SUPPORTED )
+        return( status );
+#endif /* PSA_CRYPTO_DRIVER_ESP32 */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
     /* If software fallback is compiled in, try fallback */
@@ -1864,6 +1976,13 @@ static inline psa_status_t psa_driver_wrapper_hash_clone(
                         &target_operation->ctx.cc3xx_driver_ctx ) );
 
 #endif /* PSA_CRYPTO_DRIVER_CC3XX */
+#if defined(PSA_CRYPTO_DRIVER_ESP32)
+        case PSA_CRYPTO_ESP32_DRIVER_ID:
+            target_operation->id = PSA_CRYPTO_ESP32_DRIVER_ID;
+            return( esp_sha_hash_clone(
+                        &source_operation->ctx.esp32_driver_ctx,
+                        &target_operation->ctx.esp32_driver_ctx ) );
+#endif /* PSA_CRYPTO_DRIVER_ESP32 */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             (void) target_operation;
@@ -1896,6 +2015,12 @@ static inline psa_status_t psa_driver_wrapper_hash_update(
                         &operation->ctx.cc3xx_driver_ctx,
                         input, input_length ) );
 #endif /* PSA_CRYPTO_DRIVER_CC3XX */
+#if defined(PSA_CRYPTO_DRIVER_ESP32)
+        case PSA_CRYPTO_ESP32_DRIVER_ID:
+            return( esp_sha_hash_update(
+                        &operation->ctx.esp32_driver_ctx,
+                        input, input_length ) );
+#endif /* PSA_CRYPTO_DRIVER_ESP32 */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             (void) input;
@@ -1930,6 +2055,12 @@ static inline psa_status_t psa_driver_wrapper_hash_finish(
                         &operation->ctx.cc3xx_driver_ctx,
                         hash, hash_size, hash_length ) );
 #endif /* PSA_CRYPTO_DRIVER_CC3XX */
+#if defined(PSA_CRYPTO_DRIVER_ESP32)
+        case PSA_CRYPTO_ESP32_DRIVER_ID:
+            return( esp_sha_hash_finish(
+                        &operation->ctx.esp32_driver_ctx,
+                        hash, hash_size, hash_length ) );
+#endif /* PSA_CRYPTO_DRIVER_ESP32 */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             (void) hash;
@@ -1959,6 +2090,11 @@ static inline psa_status_t psa_driver_wrapper_hash_abort(
             return( cc3xx_hash_abort(
                         &operation->ctx.cc3xx_driver_ctx ) );
 #endif /* PSA_CRYPTO_DRIVER_CC3XX */
+#if defined(PSA_CRYPTO_DRIVER_ESP32)
+        case PSA_CRYPTO_ESP32_DRIVER_ID:
+            return( esp_sha_hash_abort(
+                        &operation->ctx.esp32_driver_ctx ) );
+#endif /* PSA_CRYPTO_DRIVER_ESP32 */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             return( PSA_ERROR_BAD_STATE );
@@ -2011,6 +2147,17 @@ static inline psa_status_t psa_driver_wrapper_aead_encrypt(
 
             return( status );
 #endif /* PSA_CRYPTO_DRIVER_CC3XX */
+#if defined(PSA_CRYPTO_DRIVER_ESP32)
+            status = esp_crypto_aes_gcm_encrypt(
+                        attributes, key_buffer, key_buffer_size,
+                        alg,
+                        nonce, nonce_length,
+                        additional_data, additional_data_length,
+                        plaintext, plaintext_length,
+                        ciphertext, ciphertext_size, ciphertext_length );
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_ESP32 */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
             /* Fell through, meaning no accelerator supports this operation */
@@ -2077,6 +2224,17 @@ static inline psa_status_t psa_driver_wrapper_aead_decrypt(
 
             return( status );
 #endif /* PSA_CRYPTO_DRIVER_CC3XX */
+#if defined(PSA_CRYPTO_DRIVER_ESP32)
+            status = esp_crypto_aes_gcm_decrypt(
+                        attributes, key_buffer, key_buffer_size,
+                        alg,
+                        nonce, nonce_length,
+                        additional_data, additional_data_length,
+                        ciphertext, ciphertext_length,
+                        plaintext, plaintext_size, plaintext_length );
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_ESP32 */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
             /* Fell through, meaning no accelerator supports this operation */
@@ -2137,6 +2295,15 @@ static inline psa_status_t psa_driver_wrapper_aead_encrypt_setup(
 
             return( status );
 #endif /* PSA_CRYPTO_DRIVER_CC3XX */
+#if defined(PSA_CRYPTO_DRIVER_ESP32)
+            operation->id = PSA_CRYPTO_ESP32_DRIVER_ID;
+            status = esp_crypto_aes_gcm_encrypt_setup(
+                    &operation->ctx.esp32_driver_ctx,
+                    attributes, key_buffer, key_buffer_size,
+                    alg );
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_ESP32 */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
             /* Fell through, meaning no accelerator supports this operation */
@@ -2199,6 +2366,16 @@ static inline psa_status_t psa_driver_wrapper_aead_decrypt_setup(
 
             return( status );
 #endif /* PSA_CRYPTO_DRIVER_CC3XX */
+#if defined(PSA_CRYPTO_DRIVER_ESP32)
+            operation->id = PSA_CRYPTO_ESP32_DRIVER_ID;
+            status = esp_crypto_aes_gcm_decrypt_setup(
+                    &operation->ctx.esp32_driver_ctx,
+                    attributes,
+                    key_buffer, key_buffer_size,
+                    alg );
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_ESP32 */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
             /* Fell through, meaning no accelerator supports this operation */
@@ -2251,6 +2428,12 @@ static inline psa_status_t psa_driver_wrapper_aead_set_nonce(
                         &operation->ctx.cc3xx_driver_ctx,
                         nonce, nonce_length ) );
 #endif /* PSA_CRYPTO_DRIVER_CC3XX */
+#if defined(PSA_CRYPTO_DRIVER_ESP32)
+        case PSA_CRYPTO_ESP32_DRIVER_ID:
+            return( esp_crypto_aes_gcm_set_nonce(
+                        &operation->ctx.esp32_driver_ctx,
+                        nonce, nonce_length ) );
+#endif /* PSA_CRYPTO_DRIVER_ESP32 */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
     }
 
@@ -2331,6 +2514,12 @@ static inline psa_status_t psa_driver_wrapper_aead_update_ad(
                     &operation->ctx.cc3xx_driver_ctx,
                     input, input_length ) );
 #endif /* PSA_CRYPTO_DRIVER_CC3XX */
+#if defined(PSA_CRYPTO_DRIVER_ESP32)
+        case PSA_CRYPTO_ESP32_DRIVER_ID:
+            return( esp_crypto_aes_gcm_update_ad(
+                    &operation->ctx.esp32_driver_ctx,
+                    input, input_length ) );
+#endif /* PSA_CRYPTO_DRIVER_ESP32 */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
     }
 
@@ -2377,6 +2566,13 @@ static inline psa_status_t psa_driver_wrapper_aead_update(
                     input, input_length, output, output_size,
                     output_length ) );
 #endif /* PSA_CRYPTO_DRIVER_CC3XX */
+#if defined(PSA_CRYPTO_DRIVER_ESP32)
+        case PSA_CRYPTO_ESP32_DRIVER_ID:
+            return( esp_crypto_aes_gcm_update(
+                    &operation->ctx.esp32_driver_ctx,
+                    input, input_length, output, output_size,
+                    output_length ) );
+#endif /* PSA_CRYPTO_DRIVER_ESP32 */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
     }
 
@@ -2428,6 +2624,13 @@ static inline psa_status_t psa_driver_wrapper_aead_finish(
                     ciphertext, ciphertext_size,
                     ciphertext_length, tag, tag_size, tag_length ) );
 #endif /* PSA_CRYPTO_DRIVER_CC3XX */
+#if defined(PSA_CRYPTO_DRIVER_ESP32)
+        case PSA_CRYPTO_ESP32_DRIVER_ID:
+            return( esp_crypto_aes_gcm_finish(
+                    &operation->ctx.esp32_driver_ctx,
+                    ciphertext, ciphertext_size,
+                    ciphertext_length, tag, tag_size, tag_length ) );
+#endif /* PSA_CRYPTO_DRIVER_ESP32 */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
     }
 
@@ -2536,6 +2739,11 @@ static inline psa_status_t psa_driver_wrapper_aead_abort(
             return( cc3xx_aead_abort(
                     &operation->ctx.cc3xx_driver_ctx ) );
 #endif /* PSA_CRYPTO_DRIVER_CC3XX */
+#if defined(PSA_CRYPTO_DRIVER_ESP32)
+        case PSA_CRYPTO_ESP32_DRIVER_ID:
+            return( esp_crypto_aes_gcm_abort(
+                    &operation->ctx.esp32_driver_ctx ) );
+#endif /* PSA_CRYPTO_DRIVER_ESP32 */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
     }
 
@@ -2584,6 +2792,13 @@ static inline psa_status_t psa_driver_wrapper_mac_compute(
                 mac, mac_size, mac_length);
             return( status );
 #endif /* PSA_CRYPTO_DRIVER_CC3XX */
+#if defined(PSA_CRYPTO_DRIVER_ESP32)
+            status = esp_cmac_compute(attributes, key_buffer, key_buffer_size, alg,
+                input, input_length,
+                mac, mac_size, mac_length);
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_ESP32 */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 #if defined(MBEDTLS_PSA_BUILTIN_MAC)
             /* Fell through, meaning no accelerator supports this operation */
@@ -2664,6 +2879,18 @@ static inline psa_status_t psa_driver_wrapper_mac_sign_setup(
             operation->id = PSA_CRYPTO_CC3XX_DRIVER_ID;
             return status;
 #endif /* PSA_CRYPTO_DRIVER_CC3XX */
+#if defined(PSA_CRYPTO_DRIVER_ESP32)
+            status = esp_cmac_setup(
+                    &operation->ctx.esp32_driver_ctx,
+                    attributes,
+                    key_buffer, key_buffer_size,
+                    alg);
+            if( status == PSA_SUCCESS )
+                operation->id = PSA_CRYPTO_ESP32_DRIVER_ID;
+
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_ESP32 */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 #if defined(MBEDTLS_PSA_BUILTIN_MAC)
             /* Fell through, meaning no accelerator supports this operation */
@@ -2748,6 +2975,18 @@ static inline psa_status_t psa_driver_wrapper_mac_verify_setup(
             operation->id = PSA_CRYPTO_CC3XX_DRIVER_ID;
             return status;
 #endif /* PSA_CRYPTO_DRIVER_CC3XX */
+#if defined(PSA_CRYPTO_DRIVER_ESP32)
+            status = esp_cmac_setup(
+                &operation->ctx.esp32_driver_ctx,
+                attributes,
+                key_buffer, key_buffer_size,
+                alg);
+            if( status == PSA_SUCCESS )
+                operation->id = PSA_CRYPTO_ESP32_DRIVER_ID;
+
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_ESP32 */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 #if defined(MBEDTLS_PSA_BUILTIN_MAC)
             /* Fell through, meaning no accelerator supports this operation */
@@ -2819,6 +3058,10 @@ static inline psa_status_t psa_driver_wrapper_mac_update(
         case PSA_CRYPTO_CC3XX_DRIVER_ID:
             return(cc3xx_mac_update(&operation->ctx.cc3xx_driver_ctx, input, input_length));
 #endif /* PSA_CRYPTO_DRIVER_CC3XX */
+#if defined(PSA_CRYPTO_DRIVER_ESP32)
+        case PSA_CRYPTO_ESP32_DRIVER_ID:
+            return(esp_cmac_update(&operation->ctx.esp32_driver_ctx, input, input_length));
+#endif /* PSA_CRYPTO_DRIVER_ESP32 */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             (void) input;
@@ -2858,6 +3101,11 @@ static inline psa_status_t psa_driver_wrapper_mac_sign_finish(
             return(cc3xx_mac_sign_finish(&operation->ctx.cc3xx_driver_ctx,
                         mac, mac_size, mac_length));
 #endif /* PSA_CRYPTO_DRIVER_CC3XX */
+#if defined(PSA_CRYPTO_DRIVER_ESP32)
+        case PSA_CRYPTO_ESP32_DRIVER_ID:
+            return(esp_cmac_finish(&operation->ctx.esp32_driver_ctx,
+                        mac, mac_size, mac_length));
+#endif /* PSA_CRYPTO_DRIVER_ESP32 */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             (void) mac;
@@ -2898,6 +3146,12 @@ static inline psa_status_t psa_driver_wrapper_mac_verify_finish(
                         &operation->ctx.cc3xx_driver_ctx,
                         mac, mac_length));
 #endif /* PSA_CRYPTO_DRIVER_CC3XX */
+#if defined(PSA_CRYPTO_DRIVER_ESP32)
+        case PSA_CRYPTO_ESP32_DRIVER_ID:
+            return(esp_cmac_verify_finish(
+                        &operation->ctx.esp32_driver_ctx,
+                        mac, mac_length));
+#endif /* PSA_CRYPTO_DRIVER_ESP32 */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             (void) mac;
@@ -2929,6 +3183,10 @@ static inline psa_status_t psa_driver_wrapper_mac_abort(
         case PSA_CRYPTO_CC3XX_DRIVER_ID:
             return(cc3xx_mac_abort(&operation->ctx.cc3xx_driver_ctx));
 #endif /* PSA_CRYPTO_DRIVER_CC3XX */
+#if defined(PSA_CRYPTO_DRIVER_ESP32)
+        case PSA_CRYPTO_ESP32_DRIVER_ID:
+            return(esp_cmac_abort(&operation->ctx.esp32_driver_ctx));
+#endif /* PSA_CRYPTO_DRIVER_ESP32 */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             return( PSA_ERROR_INVALID_ARGUMENT );
