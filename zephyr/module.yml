@@ -1,7 +1,7 @@
-name: mbedtls
+name: mbedtls-3.6
 build:
-  cmake-ext: True
-  kconfig-ext: True
+  cmake-ext: False
+  kconfig-ext: False
 security:
   external-references:
     - cpe:2.3:a:trustedfirmware:mbed_tls:3.6.7:*:*:*:*:*:*:*
