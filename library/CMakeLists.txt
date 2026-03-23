@@ -48,7 +48,7 @@ if(GEN_FILES)
         COMMAND
             ${PERL_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/generate_errors.pl
-                ${CMAKE_CURRENT_SOURCE_DIR}/../tf-psa-crypto/drivers/builtin/include/mbedtls
+                ${TF_PSA_CRYPTO_DIR}/drivers/builtin/include/mbedtls
                 ${CMAKE_CURRENT_SOURCE_DIR}/../include/mbedtls
                 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/data_files
                 ${CMAKE_CURRENT_BINARY_DIR}/${TF_PSA_CRYPTO_DRIVERS_BUILTIN_SRC_DIR}/error.c
@@ -239,8 +239,8 @@ foreach(target IN LISTS target_libraries)
     # from /library and ${TF_PSA_CRYPTO_PRIVATE_INCLUDE_DIRS}.
     target_include_directories(${target}
         PUBLIC $<BUILD_INTERFACE:${MBEDTLS_DIR}/include/>
-               $<BUILD_INTERFACE:${MBEDTLS_DIR}/tf-psa-crypto/include/>
-               $<BUILD_INTERFACE:${MBEDTLS_DIR}/tf-psa-crypto/drivers/builtin/include/>
+               $<BUILD_INTERFACE:${TF_PSA_CRYPTO_DIR}/include/>
+               $<BUILD_INTERFACE:${TF_PSA_CRYPTO_DIR}/drivers/builtin/include/>
                $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
         PRIVATE ${MBEDTLS_DIR}/library/
                 ${TF_PSA_CRYPTO_PRIVATE_INCLUDE_DIRS}
