@@ -239,8 +239,8 @@ foreach(target IN LISTS target_libraries)
     # from /library and ${TF_PSA_CRYPTO_PRIVATE_INCLUDE_DIRS}.
     target_include_directories(${target}
         PUBLIC $<BUILD_INTERFACE:${MBEDTLS_DIR}/include/>
-               $<BUILD_INTERFACE:${MBEDTLS_DIR}/tf-psa-crypto/include/>
-               $<BUILD_INTERFACE:${MBEDTLS_DIR}/tf-psa-crypto/drivers/builtin/include/>
+               $<BUILD_INTERFACE:${TF_PSA_CRYPTO_DIR}/include/>
+               $<BUILD_INTERFACE:${TF_PSA_CRYPTO_DIR}/drivers/builtin/include/>
                $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
         PRIVATE ${MBEDTLS_DIR}/library/
                 ${TF_PSA_CRYPTO_PRIVATE_INCLUDE_DIRS}
