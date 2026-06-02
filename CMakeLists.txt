@@ -70,6 +70,9 @@ set(MBEDTLS_FRAMEWORK_DIR ${CMAKE_CURRENT_SOURCE_DIR}/framework)
 if(NOT DEFINED TF_PSA_CRYPTO_DIR)
     set(TF_PSA_CRYPTO_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tf-psa-crypto)
 endif()
+if(NOT DEFINED TF_PSA_CRYPTO_DISPATCH_DIR)
+    set(TF_PSA_CRYPTO_DISPATCH_DIR ${TF_PSA_CRYPTO_DIR}/dispatch)
+endif()
 
 option(ENABLE_PROGRAMS "Build Mbed TLS programs." ON)
 
@@ -377,7 +380,7 @@ endforeach(target)
 #
 set(TF_PSA_CRYPTO_PRIVATE_INCLUDE_DIRS
         ${TF_PSA_CRYPTO_DIR}/core
-        ${TF_PSA_CRYPTO_DIR}/dispatch
+        ${TF_PSA_CRYPTO_DISPATCH_DIR}
         ${TF_PSA_CRYPTO_DIR}/drivers/builtin/src
         ${TF_PSA_CRYPTO_DIR}/extras
         ${TF_PSA_CRYPTO_DIR}/platform
